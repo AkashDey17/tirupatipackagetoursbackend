@@ -164,13 +164,17 @@
 // // ------------------- SERVER START -------------------
 // const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
+//the above code is with msnodesqlv8 below is with mssql
 
 const express = require("express");
 const cors = require("cors");
 const sql = require("mssql");
 const path = require("path");
 require("dotenv").config();
+const nodemailer = require("nodemailer");
+
+
+
 
 const app = express();
 app.use(cors());
@@ -201,7 +205,14 @@ app.use(express.static(path.join(process.cwd(), "public")));
 
 
 
-
+// Setup Nodemailer with Gmail + App Password
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER, // your Gmail
+    pass: process.env.EMAIL_PASS.replace(/\s/g, ""), // 16-digit App password
+  },
+});
 
 // Helper function for queries
 async function queryAsync(query) {
@@ -318,28 +329,94 @@ app.get("/api/package-list", async (req, res) => {
   }
 });
 
-// ------------------- FEEDBACK API -------------------
-app.post("/api/submit-feedback", async (req, res) => {
-  try {
-    const { name, contactNo, emailId, userFeedback, packageId } = req.body;
-    if (!name || !contactNo || !emailId || !userFeedback || !packageId)
-      return res.status(400).json({ error: "All fields are required" });
 
-    const query = `
-      EXEC sp_UserFeedback
-        @Flag='I',
-        @Name='${name}',
-        @ContactNo='${contactNo}',
-        @EmailId='${emailId}',
-        @UserFeedback='${userFeedback}',
-        @PackageId=${packageId},
-        @CreatedBy=0
-    `;
-    await queryAsync(query);
-    res.json({ success: true, message: "Thank you for submitting, we will get back to you soon!" });
+// API to get package list
+app.get("/api/package-list", (req, res) => {
+  const packages = [
+    { PackageID: "1", PackageName: "Tirupati 1 Night / 1 Days Dharma Darshan Package" },
+    { PackageID: "2", PackageName: "Divine Blessings & Sacred Serenity – Tirupati & Srikalahasti in 2 Days 2 Nights" }
+  ];
+  res.json(packages);
+});
+
+// ------------------- FEEDBACK API -------------------
+// app.post("/api/submit-feedback", async (req, res) => {
+//   try {
+//     const { name, contactNo, emailId, userFeedback, packageId } = req.body;
+//     if (!name || !contactNo || !emailId || !userFeedback || !packageId)
+//       return res.status(400).json({ error: "All fields are required" });
+
+//     const query = `
+//       EXEC sp_UserFeedback
+//         @Flag='I',
+//         @Name='${name}',
+//         @ContactNo='${contactNo}',
+//         @EmailId='${emailId}',
+//         @UserFeedback='${userFeedback}',
+//         @PackageId=${packageId},
+//         @CreatedBy=0
+//     `;
+//     await queryAsync(query);
+//     res.json({ success: true, message: "Thank you for submitting, we will get back to you soon!" });
+//   } catch (err) {
+//     console.error("SQL error:", err);
+//     res.status(500).json({ error: "Server error" });
+//   }
+// });
+//the above code isfor db 
+
+// API endpoint to receive contact form submissions
+app.post("/api/submit-feedback", async (req, res) => {
+  const { name, emailId, contactNo, userFeedback, packageId } = req.body;
+
+  if (!name || !emailId || !contactNo || !userFeedback || !packageId) {
+    return res.status(400).json({ success: false, message: "All fields are required" });
+  }
+
+  // Construct professional email body
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: process.env.EMAIL_USER, // receive submissions in your Gmail
+    subject: `New Contact Form Submission from ${name}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h2 style="color: #6B4E3D;">New Contact Form Submission Received</h2>
+        <p>Dear Team,</p>
+        <p>We have received a new contact form submission from a visitor on the website. Below are the details:</p>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Name:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${name}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Email:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${emailId}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Phone Number:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${contactNo}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Selected Package:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${packageId}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Feedback / Message:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${userFeedback}</td>
+          </tr>
+        </table>
+        <p style="margin-top: 15px;">Please reach out to the visitor at the earliest convenience.</p>
+        <p>Best Regards,<br/>Sanchar6T Team</p>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return res.status(200).json({ success: true, message: "Feedback submitted successfully" });
   } catch (err) {
-    console.error("SQL error:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("Error sending email:", err);
+    return res.status(500).json({ success: false, message: "Server error, could not send email" });
   }
 });
 
