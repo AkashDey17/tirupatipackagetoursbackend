@@ -324,15 +324,15 @@ app.post("/api/plan", async (req, res) => {
 });
 
 // ------------------- PACKAGE LIST API -------------------
-app.get("/api/package-list", async (req, res) => {
-  try {
-    const rows = await queryAsync(`SELECT PackageID, PackageName FROM Package ORDER BY PackageID`);
-    res.json(rows);
-  } catch (err) {
-    console.error("SQL error:", err);
-    res.status(500).send("Server error");
-  }
-});
+// app.get("/api/package-list", async (req, res) => {
+//   try {
+//     const rows = await queryAsync(`SELECT PackageID, PackageName FROM Package ORDER BY PackageID`);
+//     res.json(rows);
+//   } catch (err) {
+//     console.error("SQL error:", err);
+//     res.status(500).send("Server error");
+//   }
+// });
 
 
 // API to get package list
