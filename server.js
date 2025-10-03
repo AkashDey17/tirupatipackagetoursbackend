@@ -177,8 +177,13 @@ const nodemailer = require("nodemailer");
 
 
 const app = express();
-app.use(cors());
+// app.use(cors());
 app.use(express.json());
+app.use(cors({
+  origin: "*", // allow all domains, or put your frontend URL here
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type"]
+}));
 
 
 // ------------------- DATABASE CONFIG -------------------
