@@ -436,46 +436,43 @@
 
 
 const express = require("express");
-const nodemailer = require("nodemailer");
 const cors = require("cors");
-require("dotenv").config();
+const nodemailer = require("nodemailer");
+const dotenv = require("dotenv");
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Test API Route (used by frontend to load packages)
+// ✅ Test endpoint
+app.get("/", (req, res) => {
+  res.send("Backend is running successfully 🚀");
+});
+
+// ✅ Mock API to return package list
 app.get("/api/package-list", (req, res) => {
   const packages = [
-    {
-      id: 1,
-      name: "Tirupati 1 Night / 1 Day Dharma Darshan Package",
-      description: "Includes temple darshan, accommodation, and travel.",
-    },
-    {
-      id: 2,
-      name: "Divine Blessings & Sacred Serenity – Tirupati & Srikalahasti (2 Days / 2 Nights)",
-      description: "A spiritual tour covering Tirupati and Srikalahasti temples.",
-    },
-    {
-      id: 3,
-      name: "Premium VIP Tirupati Darshan Package",
-      description: "Includes special entry darshan and premium travel service.",
-    },
+    { PackageID: 1, PackageName: "Tirupati 1 Night / 1 Day Dharma Darshan Package" },
+    { PackageID: 2, PackageName: "Divine Blessings & Sacred Serenity – Tirupati & Srikalahasti" },
+    { PackageID: 3, PackageName: "Premium VIP Tirupati Darshan Package" },
+    { PackageID: 4, PackageName: "Spiritual Comfort Deluxe Package" },
+    { PackageID: 5, PackageName: "Family Pilgrimage Special" }
   ];
   res.json(packages);
 });
 
-// ✅ Email Sending Route
-app.post("/api/send-email", async (req, res) => {
-  const { name, email, phone, subject, message } = req.body;
+// ✅ Email submission endpoint
+app.post("/api/submit-feedback", async (req, res) => {
+  const { name, contactNo, emailId, userFeedback, packageId } = req.body;
 
-  if (!name || !email || !phone || !subject || !message) {
-    return res.status(400).json({ success: false, message: "All fields are required" });
+  if (!name || !contactNo || !emailId || !userFeedback || !packageId) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
   }
 
   try {
-    // ✅ Setup Nodemailer with Gmail + App Password
+    // Configure Gmail + App Password
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -485,36 +482,32 @@ app.post("/api/send-email", async (req, res) => {
     });
 
     const mailOptions = {
-      from: `"Tirupati Package Tours" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER, // send to your Gmail inbox
-      subject: `New Inquiry from ${name} - ${subject}`,
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER, // send to yourself (admin inbox)
+      subject: `📩 New Inquiry from ${name} - Package ID ${packageId}`,
       html: `
         <h2>New Contact Form Submission</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Subject:</strong> ${subject}</p>
-        <p><strong>Message:</strong></p>
-        <p>${message}</p>
-        <hr />
-        <p>This message was automatically sent from your Tirupati Package Tours website.</p>
+        <p><b>Name:</b> ${name}</p>
+        <p><b>Email:</b> ${emailId}</p>
+        <p><b>Phone:</b> ${contactNo}</p>
+        <p><b>Selected Package ID:</b> ${packageId}</p>
+        <p><b>Message:</b></p>
+        <p>${userFeedback}</p>
+        <hr>
+        <p>🕉️ Sent via Tirupati Package Tours Contact Form</p>
       `,
     };
 
     await transporter.sendMail(mailOptions);
 
-    res.status(200).json({ success: true, message: "Email sent successfully!" });
+    res.json({ success: true, message: "Email sent successfully" });
   } catch (error) {
-    console.error("❌ Error sending email:", error);
-    res.status(500).json({ success: false, message: "Failed to send email." });
+    console.error("Email send failed:", error);
+    res.status(500).json({ success: false, message: "Error sending email" });
   }
 });
 
-// ✅ Default route
-app.get("/", (req, res) => {
-  res.send("✅ Tirupati Package Tours Backend is running successfully!");
-});
-
-// ✅ Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, "0.0.0.0", () =>
+  console.log(`✅ Server running on port ${PORT}`)
+);
