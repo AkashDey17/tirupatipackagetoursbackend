@@ -435,6 +435,7 @@
 
 
 
+// server.js
 const express = require("express");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
@@ -446,7 +447,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Test endpoint
+// ✅ Health check
 app.get("/", (req, res) => {
   res.send("Backend is running successfully 🚀");
 });
@@ -472,7 +473,6 @@ app.post("/api/submit-feedback", async (req, res) => {
   }
 
   try {
-    // Configure Gmail + App Password
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -504,6 +504,31 @@ app.post("/api/submit-feedback", async (req, res) => {
   } catch (error) {
     console.error("Email send failed:", error);
     res.status(500).json({ success: false, message: "Error sending email" });
+  }
+});
+
+// ✅ Test email route (optional)
+app.get("/test-mail", async (req, res) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS.replace(/\s/g, ""),
+      },
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER,
+      subject: "✅ Test Email from Render Backend",
+      text: "This is a test email to verify Gmail App Password.",
+    });
+
+    res.json({ success: true, message: "Test email sent successfully!" });
+  } catch (error) {
+    console.error("Test mail error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
