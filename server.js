@@ -547,13 +547,14 @@ app.post("/api/submit-feedback", async (req, res) => {
     await transporter.sendMail(mailOptions);
     return res.json({ success: true, message: "Feedback submitted successfully" });
   } catch (error) {
-    console.error("Error sending email:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error. Please try again later.",
-      error: error.message,
-    });
-  }
+  console.error("Error sending email:", error);
+  return res.status(500).json({
+    success: false,
+    message: "Server error. Please try again later.",
+    error: error.response || error.toString(), // <--- full error message
+  });
+}
+
 });
 
 
