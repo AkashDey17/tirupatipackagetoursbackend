@@ -458,11 +458,9 @@ app.get("/", (req, res) => {
 // ✅ Mock API to return package list
 app.get("/api/package-list", (req, res) => {
   const packages = [
-    { PackageID: 1, PackageName: "Tirupati 1 Night / 1 Day Dharma Darshan Package" },
-    { PackageID: 2, PackageName: "Divine Blessings & Sacred Serenity – Tirupati & Srikalahasti" },
-    { PackageID: 3, PackageName: "Premium VIP Tirupati Darshan Package" },
-    { PackageID: 4, PackageName: "Spiritual Comfort Deluxe Package" },
-    { PackageID: 5, PackageName: "Family Pilgrimage Special" }
+    { PackageID: 1, PackageName: "  APTDC Tirupati 1 Night / 1 Days Dharma Darshan Package" },
+    { PackageID: 2, PackageName: "Divine Blessings & Sacred Serenity – Tirupati & Srikalahasti in 2 Days 2 Nights" },
+    
   ];
   res.json(packages);
 });
@@ -522,7 +520,7 @@ app.post("/api/submit-feedback", (req, res) => {
 
   try {
     // Create WhatsApp message link
-    const adminWhatsAppNumber = "919964060505"; // Replace with your number with country code
+    const adminWhatsAppNumber = "919612152820"; // Replace with your number with country code
     const message = `
 New Inquiry:
 Name: ${name}
