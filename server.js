@@ -502,6 +502,14 @@ app.post("/itinerary", async (req, res) => {
 // ------------------- USER SIGNUP & LOGIN -------------------
 
 // mail
+
+ app.get("/api/package-list", (req, res) => {
+  const packages = [
+    { PackageID: "1", PackageName: "Tirupati 1 Night / 1 Days Dharma Darshan Package" },
+    { PackageID: "2", PackageName: "Divine Blessings & Sacred Serenity – Tirupati & Srikalahasti in 2 Days 2 Nights" }
+  ];
+  res.json(packages);
+});
 // Hard-coded transporter for tirupatipackagetours.com email
 const transporter = nodemailer.createTransport({
   host: "smtpout.secureserver.net", // GoDaddy SMTP
