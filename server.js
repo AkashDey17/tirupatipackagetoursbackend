@@ -269,6 +269,10 @@ app.use(express.json());
 //   driver: "msnodesqlv8",
 // };
 
+app.get("/", (req, res) => {
+  res.send("✅ Server is running");
+});
+
 // ------------------- OTP SETUP -------------------
 let otpStore = {}; // Use Redis or DB in production
 
