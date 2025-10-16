@@ -247,7 +247,7 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
-const sql = require("mssql/msnodesqlv8");
+// const sql = require("mssql/msnodesqlv8");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
 require("dotenv").config();
@@ -259,15 +259,15 @@ app.use(cors());
 app.use(express.json());
 
 // ------------------- DATABASE CONFIG -------------------
-const dbConfig = {
-  server: process.env.DB_SERVER,
-  database: process.env.DB_NAME,
-  options: {
-    trustedConnection: true,
-    trustServerCertificate: true,
-  },
-  driver: "msnodesqlv8",
-};
+// const dbConfig = {
+//   server: process.env.DB_SERVER,
+//   database: process.env.DB_NAME,
+//   options: {
+//     trustedConnection: true,
+//     trustServerCertificate: true,
+//   },
+//   driver: "msnodesqlv8",
+// };
 
 // ------------------- OTP SETUP -------------------
 let otpStore = {}; // Use Redis or DB in production
@@ -282,34 +282,34 @@ function safeDate(dateStr) {
 // ------------------- ROUTES -------------------
 
 // Send OTP
-app.post("/api/send-otp", async (req, res) => {
-  const { email, name } = req.body;
-  if (!email) return res.status(400).json({ error: "Email is required" });
+// app.post("/api/send-otp", async (req, res) => {
+//   const { email, name } = req.body;
+//   if (!email) return res.status(400).json({ error: "Email is required" });
 
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  otpStore[email] = otp;
+//   const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//   otpStore[email] = otp;
 
-  try {
-    await transporter.sendMail({
-      from: `"Sanchar6T Support" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Your One-Time Password (OTP) Verification",
-      html: `
-        <div style="font-family: Arial, sans-serif; color: #333;">
-          <h2>Hello ${name || "User"},</h2>
-          <p>Your OTP is:</p>
-          <h1 style="letter-spacing: 3px; color: #3D85C6;">${otp}</h1>
-          <p>Valid for <b>5 minutes</b>.</p>
-        </div>
-      `,
-    });
-    console.log(`OTP sent to ${email}: ${otp}`);
-    res.json({ success: true, message: "OTP sent" });
-  } catch (err) {
-    console.error("OTP error:", err);
-    res.status(500).json({ error: "Failed to send OTP" });
-  }
-});
+//   try {
+//     await transporter.sendMail({
+//       from: `"Sanchar6T Support" <${process.env.EMAIL_USER}>`,
+//       to: email,
+//       subject: "Your One-Time Password (OTP) Verification",
+//       html: `
+//         <div style="font-family: Arial, sans-serif; color: #333;">
+//           <h2>Hello ${name || "User"},</h2>
+//           <p>Your OTP is:</p>
+//           <h1 style="letter-spacing: 3px; color: #3D85C6;">${otp}</h1>
+//           <p>Valid for <b>5 minutes</b>.</p>
+//         </div>
+//       `,
+//     });
+//     console.log(`OTP sent to ${email}: ${otp}`);
+//     res.json({ success: true, message: "OTP sent" });
+//   } catch (err) {
+//     console.error("OTP error:", err);
+//     res.status(500).json({ error: "Failed to send OTP" });
+//   }
+// });
 
 // Itinerary generation
 app.post("/itinerary", async (req, res) => {
@@ -350,154 +350,154 @@ app.post("/itinerary", async (req, res) => {
 // ------------------- BUS BOOKING DETAILS -------------------
 
 // Get all bus booking details
-app.get("/api/bus-booking-details", async (req, res) => {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request().query(`
-      SELECT TOP 1000 *
-      FROM [dbo].[BusBookingDetails]
-      ORDER BY BusBooKingDetailID
-    `);
-    res.json(result.recordset);
-  } catch (err) {
-    console.error("SQL GET error:", err);
-    res.status(500).json({ error: "Failed to fetch bus booking details" });
-  }
-});
+// app.get("/api/bus-booking-details", async (req, res) => {
+//   try {
+//     const pool = await sql.connect(dbConfig);
+//     const result = await pool.request().query(`
+//       SELECT TOP 1000 *
+//       FROM [dbo].[BusBookingDetails]
+//       ORDER BY BusBooKingDetailID
+//     `);
+//     res.json(result.recordset);
+//   } catch (err) {
+//     console.error("SQL GET error:", err);
+//     res.status(500).json({ error: "Failed to fetch bus booking details" });
+//   }
+// });
 
 // Get bus booking detail by ID
-app.get("/api/bus-booking-details/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
-  if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+// app.get("/api/bus-booking-details/:id", async (req, res) => {
+//   const id = parseInt(req.params.id);
+//   if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
 
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("BusBooKingDetailID", sql.Int, id)
-      .query("SELECT * FROM [dbo].[BusBookingDetails] WHERE BusBooKingDetailID = @BusBooKingDetailID");
-    if (!result.recordset.length) return res.status(404).json({ message: "Not found" });
-    res.json(result.recordset[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch bus booking detail" });
-  }
-});
+//   try {
+//     const pool = await sql.connect(dbConfig);
+//     const result = await pool.request()
+//       .input("BusBooKingDetailID", sql.Int, id)
+//       .query("SELECT * FROM [dbo].[BusBookingDetails] WHERE BusBooKingDetailID = @BusBooKingDetailID");
+//     if (!result.recordset.length) return res.status(404).json({ message: "Not found" });
+//     res.json(result.recordset[0]);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Failed to fetch bus booking detail" });
+//   }
+// });
 
 // Insert bus booking detail
-app.post("/api/bus-booking-details", async (req, res) => {
-  try {
-    const { OperatorID, PackageID, WkEndSeatPrice, WkDaySeatPrice, DepartureTime, Arrivaltime, Status, CreatedBy } = req.body;
-    const pool = await sql.connect(dbConfig);
+// app.post("/api/bus-booking-details", async (req, res) => {
+//   try {
+//     const { OperatorID, PackageID, WkEndSeatPrice, WkDaySeatPrice, DepartureTime, Arrivaltime, Status, CreatedBy } = req.body;
+//     const pool = await sql.connect(dbConfig);
 
-    await pool.request()
-      .input("Flag", sql.Char(1), "I")
-      .input("BusBooKingDetailID", sql.Int, 0)
-      .input("OperatorID", sql.Int, OperatorID)
-      .input("PackageID", sql.Int, PackageID)
-      .input("WkEndSeatPrice", sql.Numeric(18,0), WkEndSeatPrice)
-      .input("WkDaySeatPrice", sql.Numeric(18,0), WkDaySeatPrice)
-      .input("DepartureTime", sql.DateTime, safeDate(DepartureTime))
-      .input("Arrivaltime", sql.DateTime, safeDate(Arrivaltime))
-      .input("AvaialbleSeats", sql.DateTime, null)
-      .input("Status", sql.VarChar(250), Status)
-      .input("CreatedBy", sql.Int, CreatedBy)
-      .execute("sp_BusBookingDetails");
+//     await pool.request()
+//       .input("Flag", sql.Char(1), "I")
+//       .input("BusBooKingDetailID", sql.Int, 0)
+//       .input("OperatorID", sql.Int, OperatorID)
+//       .input("PackageID", sql.Int, PackageID)
+//       .input("WkEndSeatPrice", sql.Numeric(18,0), WkEndSeatPrice)
+//       .input("WkDaySeatPrice", sql.Numeric(18,0), WkDaySeatPrice)
+//       .input("DepartureTime", sql.DateTime, safeDate(DepartureTime))
+//       .input("Arrivaltime", sql.DateTime, safeDate(Arrivaltime))
+//       .input("AvaialbleSeats", sql.DateTime, null)
+//       .input("Status", sql.VarChar(250), Status)
+//       .input("CreatedBy", sql.Int, CreatedBy)
+//       .execute("sp_BusBookingDetails");
 
-    res.status(201).json({ message: "Bus booking detail created successfully" });
-  } catch (err) {
-    console.error("SQL INSERT error:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
+//     res.status(201).json({ message: "Bus booking detail created successfully" });
+//   } catch (err) {
+//     console.error("SQL INSERT error:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
 // Get all buses with amenities
-app.get("/api/bus-details", async (req, res) => {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request().query(`
-      SELECT 
-        b.[BusBooKingDetailID],
-        b.[OperatorID],
-        b.[PackageID],
-        b.[WkEndSeatPrice],
-        b.[WkDaySeatPrice],
-        b.[DepartureTime],
-        b.[Arrivaltime],
-        b.[Status],
-        b.[PackageName],
-        b.[BusNo],
-        b.[BusSeats],
-        b.[BusType],
-        b.[FemaleSeatNo],
-        a.[AMName]
-      FROM [dbo].[vw_BusBookingDetails] b
-      LEFT JOIN [dbo].[vw_BusAmenities] a
-        ON b.OperatorID = a.BusOperatorID
-    `);
+// app.get("/api/bus-details", async (req, res) => {
+//   try {
+//     const pool = await sql.connect(dbConfig);
+//     const result = await pool.request().query(`
+//       SELECT 
+//         b.[BusBooKingDetailID],
+//         b.[OperatorID],
+//         b.[PackageID],
+//         b.[WkEndSeatPrice],
+//         b.[WkDaySeatPrice],
+//         b.[DepartureTime],
+//         b.[Arrivaltime],
+//         b.[Status],
+//         b.[PackageName],
+//         b.[BusNo],
+//         b.[BusSeats],
+//         b.[BusType],
+//         b.[FemaleSeatNo],
+//         a.[AMName]
+//       FROM [dbo].[vw_BusBookingDetails] b
+//       LEFT JOIN [dbo].[vw_BusAmenities] a
+//         ON b.OperatorID = a.BusOperatorID
+//     `);
 
-    const buses = {};
-    result.recordset.forEach(row => {
-      if (!buses[row.BusBooKingDetailID]) {
-        buses[row.BusBooKingDetailID] = { ...row, amenities: [] };
-      }
-      if (row.AMName) buses[row.BusBooKingDetailID].amenities.push(row.AMName);
-    });
+//     const buses = {};
+//     result.recordset.forEach(row => {
+//       if (!buses[row.BusBooKingDetailID]) {
+//         buses[row.BusBooKingDetailID] = { ...row, amenities: [] };
+//       }
+//       if (row.AMName) buses[row.BusBooKingDetailID].amenities.push(row.AMName);
+//     });
 
-    res.json(Object.values(buses));
-  } catch (err) {
-    console.error("SQL error:", err);
-    res.status(500).json({ error: "Failed to fetch bus details" });
-  }
-});
+//     res.json(Object.values(buses));
+//   } catch (err) {
+//     console.error("SQL error:", err);
+//     res.status(500).json({ error: "Failed to fetch bus details" });
+//   }
+// });
 
 // Book a seat
-app.post("/api/bus-booking-seat", async (req, res) => {
-  try {
-    const payload = req.body;
-    const pool = await sql.connect(dbConfig);
-    const proc = "dbo.sp_BusBookingSeat";
-    const saveFlag = payload.SavePassengerDetails === "Y" ? "Yes" : "No";
+// app.post("/api/bus-booking-seat", async (req, res) => {
+//   try {
+//     const payload = req.body;
+//     const pool = await sql.connect(dbConfig);
+//     const proc = "dbo.sp_BusBookingSeat";
+//     const saveFlag = payload.SavePassengerDetails === "Y" ? "Yes" : "No";
 
-    const request = pool.request();
-    request.input("Flag", sql.Char(1), "I");
-    request.input("BusBookingSeatID", sql.Int, payload.BusBookingSeatID ?? 0);
-    request.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
-    request.input("BusOperatorID", sql.Int, payload.BusOperatorID);
-    request.input("UserID", sql.Int, payload.UserID ?? 0);
-    request.input("ForSelf", sql.Bit, payload.ForSelf ? 1 : 0);
-    request.input("IsPrimary", sql.Int, payload.IsPrimary ?? 1);
-    request.input("SeatNo", sql.NVarChar(50), payload.SeatNo ?? null);
-    request.input("FirstName", sql.VarChar(250), payload.FirstName ?? null);
-    request.input("MiddleName", sql.VarChar(250), payload.MiddleName ?? null);
-    request.input("LastName", sql.VarChar(250), payload.LastName ?? null);
-    request.input("Email", sql.VarChar(150), payload.Email ?? null);
-    request.input("ContactNo", sql.VarChar(50), payload.ContactNo ?? null);
-    request.input("Gender", sql.VarChar(50), payload.Gender ?? null);
-    request.input("AadharNo", sql.VarChar(20), payload.AadharNo ?? null);
-    request.input("PancardNo", sql.VarChar(20), payload.PancardNo ?? null);
-    request.input("BloodGroup", sql.VarChar(10), payload.BloodGroup ?? null);
-    request.input("DOB", sql.DateTime, safeDate(payload.DOB));
-    request.input("FoodPref", sql.VarChar(100), payload.FoodPref ?? null);
-    request.input("Disabled", sql.Bit, payload.Disabled ? 1 : 0);
-    request.input("Pregnant", sql.Bit, payload.Pregnant ? 1 : 0);
-    request.input("RegisteredCompanyNumber", sql.VarChar(50), payload.RegisteredCompanyNumber ?? null);
-    request.input("RegisteredCompanyName", sql.VarChar(50), payload.RegisteredCompanyName ?? null);
-    request.input("DrivingLicence", sql.VarChar(100), payload.DrivingLicence ?? null);
-    request.input("PassportNo", sql.VarChar(100), payload.PassportNo ?? null);
-    request.input("RationCard", sql.VarChar(100), payload.RationCard ?? null);
-    request.input("VoterID", sql.VarChar(100), payload.VoterID ?? null);
-    request.input("Others", sql.VarChar(500), payload.Others ?? null);
-    request.input("NRI", sql.Bit, payload.NRI ? 1 : 0);
-    request.input("CreatedBy", sql.Int, payload.CreatedBy ?? 1);
-    request.input("SavePassengerDetails", sql.VarChar(50), saveFlag);
+//     const request = pool.request();
+//     request.input("Flag", sql.Char(1), "I");
+//     request.input("BusBookingSeatID", sql.Int, payload.BusBookingSeatID ?? 0);
+//     request.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
+//     request.input("BusOperatorID", sql.Int, payload.BusOperatorID);
+//     request.input("UserID", sql.Int, payload.UserID ?? 0);
+//     request.input("ForSelf", sql.Bit, payload.ForSelf ? 1 : 0);
+//     request.input("IsPrimary", sql.Int, payload.IsPrimary ?? 1);
+//     request.input("SeatNo", sql.NVarChar(50), payload.SeatNo ?? null);
+//     request.input("FirstName", sql.VarChar(250), payload.FirstName ?? null);
+//     request.input("MiddleName", sql.VarChar(250), payload.MiddleName ?? null);
+//     request.input("LastName", sql.VarChar(250), payload.LastName ?? null);
+//     request.input("Email", sql.VarChar(150), payload.Email ?? null);
+//     request.input("ContactNo", sql.VarChar(50), payload.ContactNo ?? null);
+//     request.input("Gender", sql.VarChar(50), payload.Gender ?? null);
+//     request.input("AadharNo", sql.VarChar(20), payload.AadharNo ?? null);
+//     request.input("PancardNo", sql.VarChar(20), payload.PancardNo ?? null);
+//     request.input("BloodGroup", sql.VarChar(10), payload.BloodGroup ?? null);
+//     request.input("DOB", sql.DateTime, safeDate(payload.DOB));
+//     request.input("FoodPref", sql.VarChar(100), payload.FoodPref ?? null);
+//     request.input("Disabled", sql.Bit, payload.Disabled ? 1 : 0);
+//     request.input("Pregnant", sql.Bit, payload.Pregnant ? 1 : 0);
+//     request.input("RegisteredCompanyNumber", sql.VarChar(50), payload.RegisteredCompanyNumber ?? null);
+//     request.input("RegisteredCompanyName", sql.VarChar(50), payload.RegisteredCompanyName ?? null);
+//     request.input("DrivingLicence", sql.VarChar(100), payload.DrivingLicence ?? null);
+//     request.input("PassportNo", sql.VarChar(100), payload.PassportNo ?? null);
+//     request.input("RationCard", sql.VarChar(100), payload.RationCard ?? null);
+//     request.input("VoterID", sql.VarChar(100), payload.VoterID ?? null);
+//     request.input("Others", sql.VarChar(500), payload.Others ?? null);
+//     request.input("NRI", sql.Bit, payload.NRI ? 1 : 0);
+//     request.input("CreatedBy", sql.Int, payload.CreatedBy ?? 1);
+//     request.input("SavePassengerDetails", sql.VarChar(50), saveFlag);
 
-    const result = await request.execute(proc);
-    res.status(201).json({ message: "Booking saved successfully", result: result.recordset });
-  } catch (err) {
-    console.error("SQL INSERT error:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
+//     const result = await request.execute(proc);
+//     res.status(201).json({ message: "Booking saved successfully", result: result.recordset });
+//   } catch (err) {
+//     console.error("SQL INSERT error:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
 // ------------------- USER SIGNUP & LOGIN -------------------
 
@@ -561,88 +561,88 @@ app.post("/api/submit-feedback", async (req, res) => {
 // mail
 
 // Signup
-app.post("/api/signup", async (req, res) => {
-  try {
-    const { Fname, Mname, Lname, email, phoneNumber, password, gender } = req.body;
-    if (!Fname || !Lname || !password || (!email && !phoneNumber)) {
-      return res.status(400).json({ success: false, message: "Fill all required fields" });
-    }
+// app.post("/api/signup", async (req, res) => {
+//   try {
+//     const { Fname, Mname, Lname, email, phoneNumber, password, gender } = req.body;
+//     if (!Fname || !Lname || !password || (!email && !phoneNumber)) {
+//       return res.status(400).json({ success: false, message: "Fill all required fields" });
+//     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const pool = await sql.connect(dbConfig);
+//     const hashedPassword = await bcrypt.hash(password, 10);
+//     const pool = await sql.connect(dbConfig);
 
-    await pool.request()
-      .input("Flag", sql.Char(1), "I")
-      .input("UserID", sql.Int, 0)
-      .input("UserType", sql.Int, 2)
-      .input("Status", sql.VarChar(250), "true")
-      .input("Password", sql.VarChar(2000), hashedPassword)
-      .input("FirstName", sql.VarChar(250), Fname)
-      .input("MiddleName", sql.VarChar(250), Mname || null)
-      .input("LastName", sql.VarChar(250), Lname)
-      .input("Email", sql.VarChar(500), email || "")
-      .input("ContactNo", sql.VarChar(50), phoneNumber || "")
-      .input("Gender", sql.VarChar(50), gender || null)
-      .input("CreatedBy", sql.Int, 0)
-      .execute("sp_User");
+//     await pool.request()
+//       .input("Flag", sql.Char(1), "I")
+//       .input("UserID", sql.Int, 0)
+//       .input("UserType", sql.Int, 2)
+//       .input("Status", sql.VarChar(250), "true")
+//       .input("Password", sql.VarChar(2000), hashedPassword)
+//       .input("FirstName", sql.VarChar(250), Fname)
+//       .input("MiddleName", sql.VarChar(250), Mname || null)
+//       .input("LastName", sql.VarChar(250), Lname)
+//       .input("Email", sql.VarChar(500), email || "")
+//       .input("ContactNo", sql.VarChar(50), phoneNumber || "")
+//       .input("Gender", sql.VarChar(50), gender || null)
+//       .input("CreatedBy", sql.Int, 0)
+//       .execute("sp_User");
 
-    res.json({
-      success: true,
-      message: "Signup successful!",
-      user: { Fname, Mname, Lname, email, phoneNumber, gender }
-    });
-  } catch (err) {
-    console.error("Signup error:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+//     res.json({
+//       success: true,
+//       message: "Signup successful!",
+//       user: { Fname, Mname, Lname, email, phoneNumber, gender }
+//     });
+//   } catch (err) {
+//     console.error("Signup error:", err);
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// });
 
 // Login
-app.post("/api/login", async (req, res) => {
-  try {
-    const { email, phoneNumber, password } = req.body;
-    if (!password || (!email && !phoneNumber)) return res.status(400).json({ success: false, message: "Fill all required fields" });
+// app.post("/api/login", async (req, res) => {
+//   try {
+//     const { email, phoneNumber, password } = req.body;
+//     if (!password || (!email && !phoneNumber)) return res.status(400).json({ success: false, message: "Fill all required fields" });
 
-    const pool = await sql.connect(dbConfig);
-    let query = `
-      SELECT spd.UserID, spd.FirstName, spd.MiddleName, spd.LastName, spd.Email, spd.ContactNo, spd.Gender, us.Password
-      FROM SavedPassengerDtls spd
-      JOIN UserSecurity us ON spd.UserID = us.UserID
-      WHERE `;
+//     const pool = await sql.connect(dbConfig);
+//     let query = `
+//       SELECT spd.UserID, spd.FirstName, spd.MiddleName, spd.LastName, spd.Email, spd.ContactNo, spd.Gender, us.Password
+//       FROM SavedPassengerDtls spd
+//       JOIN UserSecurity us ON spd.UserID = us.UserID
+//       WHERE `;
 
-    if (email && phoneNumber) query += `(spd.Email = @email OR spd.ContactNo = @phoneNumber)`;
-    else if (email) query += `spd.Email = @email`;
-    else if (phoneNumber) query += `spd.ContactNo = @phoneNumber`;
+//     if (email && phoneNumber) query += `(spd.Email = @email OR spd.ContactNo = @phoneNumber)`;
+//     else if (email) query += `spd.Email = @email`;
+//     else if (phoneNumber) query += `spd.ContactNo = @phoneNumber`;
 
-    const request = pool.request();
-    if (email) request.input("email", sql.VarChar(500), email);
-    if (phoneNumber) request.input("phoneNumber", sql.VarChar(50), phoneNumber);
+//     const request = pool.request();
+//     if (email) request.input("email", sql.VarChar(500), email);
+//     if (phoneNumber) request.input("phoneNumber", sql.VarChar(50), phoneNumber);
 
-    const result = await request.query(query);
-    if (!result.recordset.length) return res.status(400).json({ success: false, message: "User not found" });
+//     const result = await request.query(query);
+//     if (!result.recordset.length) return res.status(400).json({ success: false, message: "User not found" });
 
-    const user = result.recordset[0];
-    const isMatch = await bcrypt.compare(password, user.Password);
-    if (!isMatch) return res.status(400).json({ success: false, message: "Invalid credentials" });
+//     const user = result.recordset[0];
+//     const isMatch = await bcrypt.compare(password, user.Password);
+//     if (!isMatch) return res.status(400).json({ success: false, message: "Invalid credentials" });
 
-    res.json({
-      success: true,
-      message: "Login successful",
-      user: {
-        Fname: user.FirstName,
-        Mname: user.MiddleName,
-        Lname: user.LastName,
-        email: user.Email,
-        phoneNumber: user.ContactNo,
-        gender: user.Gender,
-        UserID: user.UserID
-      }
-    });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+//     res.json({
+//       success: true,
+//       message: "Login successful",
+//       user: {
+//         Fname: user.FirstName,
+//         Mname: user.MiddleName,
+//         Lname: user.LastName,
+//         email: user.Email,
+//         phoneNumber: user.ContactNo,
+//         gender: user.Gender,
+//         UserID: user.UserID
+//       }
+//     });
+//   } catch (err) {
+//     console.error("Login error:", err);
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// });
 
 // ------------------- START SERVER -------------------
 app.listen(PORT, () => {
