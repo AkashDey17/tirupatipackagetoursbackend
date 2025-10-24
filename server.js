@@ -247,7 +247,7 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
-// const sql = require("mssql/msnodesqlv8");
+ const sql = require("mssql/msnodesqlv8");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
 require("dotenv").config();
@@ -259,15 +259,15 @@ app.use(cors());
 app.use(express.json());
 
 // ------------------- DATABASE CONFIG -------------------
-// const dbConfig = {
-//   server: process.env.DB_SERVER,
-//   database: process.env.DB_NAME,
-//   options: {
-//     trustedConnection: true,
-//     trustServerCertificate: true,
-//   },
-//   driver: "msnodesqlv8",
-// };
+const dbConfig = {
+  server: process.env.DB_SERVER,
+  database: process.env.DB_NAME,
+  options: {
+    trustedConnection: true,
+    trustServerCertificate: true,
+  },
+  driver: "msnodesqlv8",
+};
 
 app.get("/", (req, res) => {
   res.send("✅ Server is running");
@@ -354,154 +354,363 @@ app.post("/itinerary", async (req, res) => {
 // ------------------- BUS BOOKING DETAILS -------------------
 
 // Get all bus booking details
-// app.get("/api/bus-booking-details", async (req, res) => {
-//   try {
-//     const pool = await sql.connect(dbConfig);
-//     const result = await pool.request().query(`
-//       SELECT TOP 1000 *
-//       FROM [dbo].[BusBookingDetails]
-//       ORDER BY BusBooKingDetailID
-//     `);
-//     res.json(result.recordset);
-//   } catch (err) {
-//     console.error("SQL GET error:", err);
-//     res.status(500).json({ error: "Failed to fetch bus booking details" });
-//   }
-// });
+app.get("/api/bus-booking-details", async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query(`
+      SELECT TOP 1000 *
+      FROM [dbo].[BusBookingDetails]
+      ORDER BY BusBooKingDetailID
+    `);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("SQL GET error:", err);
+    res.status(500).json({ error: "Failed to fetch bus booking details" });
+  }
+});
 
 // Get bus booking detail by ID
-// app.get("/api/bus-booking-details/:id", async (req, res) => {
-//   const id = parseInt(req.params.id);
-//   if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+app.get("/api/bus-booking-details/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
 
-//   try {
-//     const pool = await sql.connect(dbConfig);
-//     const result = await pool.request()
-//       .input("BusBooKingDetailID", sql.Int, id)
-//       .query("SELECT * FROM [dbo].[BusBookingDetails] WHERE BusBooKingDetailID = @BusBooKingDetailID");
-//     if (!result.recordset.length) return res.status(404).json({ message: "Not found" });
-//     res.json(result.recordset[0]);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Failed to fetch bus booking detail" });
-//   }
-// });
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("BusBooKingDetailID", sql.Int, id)
+      .query("SELECT * FROM [dbo].[BusBookingDetails] WHERE BusBooKingDetailID = @BusBooKingDetailID");
+    if (!result.recordset.length) return res.status(404).json({ message: "Not found" });
+    res.json(result.recordset[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch bus booking detail" });
+  }
+});
 
 // Insert bus booking detail
-// app.post("/api/bus-booking-details", async (req, res) => {
-//   try {
-//     const { OperatorID, PackageID, WkEndSeatPrice, WkDaySeatPrice, DepartureTime, Arrivaltime, Status, CreatedBy } = req.body;
-//     const pool = await sql.connect(dbConfig);
+app.post("/api/bus-booking-details", async (req, res) => {
+  try {
+    const { OperatorID, PackageID, WkEndSeatPrice, WkDaySeatPrice, DepartureTime, Arrivaltime, Status, CreatedBy } = req.body;
+    const pool = await sql.connect(dbConfig);
 
-//     await pool.request()
-//       .input("Flag", sql.Char(1), "I")
-//       .input("BusBooKingDetailID", sql.Int, 0)
-//       .input("OperatorID", sql.Int, OperatorID)
-//       .input("PackageID", sql.Int, PackageID)
-//       .input("WkEndSeatPrice", sql.Numeric(18,0), WkEndSeatPrice)
-//       .input("WkDaySeatPrice", sql.Numeric(18,0), WkDaySeatPrice)
-//       .input("DepartureTime", sql.DateTime, safeDate(DepartureTime))
-//       .input("Arrivaltime", sql.DateTime, safeDate(Arrivaltime))
-//       .input("AvaialbleSeats", sql.DateTime, null)
-//       .input("Status", sql.VarChar(250), Status)
-//       .input("CreatedBy", sql.Int, CreatedBy)
-//       .execute("sp_BusBookingDetails");
+    await pool.request()
+      .input("Flag", sql.Char(1), "I")
+      .input("BusBooKingDetailID", sql.Int, 0)
+      .input("OperatorID", sql.Int, OperatorID)
+      .input("PackageID", sql.Int, PackageID)
+      .input("WkEndSeatPrice", sql.Numeric(18,0), WkEndSeatPrice)
+      .input("WkDaySeatPrice", sql.Numeric(18,0), WkDaySeatPrice)
+      .input("DepartureTime", sql.DateTime, safeDate(DepartureTime))
+      .input("Arrivaltime", sql.DateTime, safeDate(Arrivaltime))
+      .input("AvaialbleSeats", sql.DateTime, null)
+      .input("Status", sql.VarChar(250), Status)
+      .input("CreatedBy", sql.Int, CreatedBy)
+      .execute("sp_BusBookingDetails");
 
-//     res.status(201).json({ message: "Bus booking detail created successfully" });
-//   } catch (err) {
-//     console.error("SQL INSERT error:", err);
-//     res.status(500).json({ error: err.message });
-//   }
-// });
+    res.status(201).json({ message: "Bus booking detail created successfully" });
+  } catch (err) {
+    console.error("SQL INSERT error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Get all buses with amenities
-// app.get("/api/bus-details", async (req, res) => {
+app.get("/api/bus-details", async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query(`
+      SELECT 
+        b.[BusBooKingDetailID],
+        b.[OperatorID],
+        b.[PackageID],
+        b.[WkEndSeatPrice],
+        b.[WkDaySeatPrice],
+        b.[DepartureTime],
+        b.[Arrivaltime],
+        b.[Status],
+        b.[PackageName],
+        b.[BusNo],
+        b.[BusSeats],
+        b.[BusType],
+        b.[FemaleSeatNo],
+        a.[AMName]
+      FROM [dbo].[vw_BusBookingDetails] b
+      LEFT JOIN [dbo].[vw_BusAmenities] a
+        ON b.OperatorID = a.BusOperatorID
+    `);
+
+    const buses = {};
+    result.recordset.forEach(row => {
+      if (!buses[row.BusBooKingDetailID]) {
+        buses[row.BusBooKingDetailID] = { ...row, amenities: [] };
+      }
+      if (row.AMName) buses[row.BusBooKingDetailID].amenities.push(row.AMName);
+    });
+
+    res.json(Object.values(buses));
+  } catch (err) {
+    console.error("SQL error:", err);
+    res.status(500).json({ error: "Failed to fetch bus details" });
+  }
+});
+
+/////////////////////////////////////////
+
+
+// ------------------- below are apis for seat blocking after payment is sucessful -------------------
+
+/// =======================
+// Reduce Bus Seats API
+// =======================
+// app.post('/api/bus/reduceSeat', async (req, res) => {
+//   const { BusOperatorID, BusNo, CreatedBy, BookedSeats } = req.body;
+
+//   if (!BusOperatorID || !BusNo || !CreatedBy || !BookedSeats) {
+//     return res.status(400).json({ 
+//       message: 'Missing required fields. Please provide BusOperatorID, BusNo, CreatedBy, and BookedSeats.' 
+//     });
+//   }
+
 //   try {
 //     const pool = await sql.connect(dbConfig);
-//     const result = await pool.request().query(`
-//       SELECT 
-//         b.[BusBooKingDetailID],
-//         b.[OperatorID],
-//         b.[PackageID],
-//         b.[WkEndSeatPrice],
-//         b.[WkDaySeatPrice],
-//         b.[DepartureTime],
-//         b.[Arrivaltime],
-//         b.[Status],
-//         b.[PackageName],
-//         b.[BusNo],
-//         b.[BusSeats],
-//         b.[BusType],
-//         b.[FemaleSeatNo],
-//         a.[AMName]
-//       FROM [dbo].[vw_BusBookingDetails] b
-//       LEFT JOIN [dbo].[vw_BusAmenities] a
-//         ON b.OperatorID = a.BusOperatorID
-//     `);
 
-//     const buses = {};
-//     result.recordset.forEach(row => {
-//       if (!buses[row.BusBooKingDetailID]) {
-//         buses[row.BusBooKingDetailID] = { ...row, amenities: [] };
-//       }
-//       if (row.AMName) buses[row.BusBooKingDetailID].amenities.push(row.AMName);
+//     const result = await pool.request()
+//       .input('Flag', sql.Char(1), 'B')
+//       .input('BusOperatorID', sql.Int, BusOperatorID)
+//       .input('BusNo', sql.VarChar(200), BusNo)
+//       .input('BusType', sql.VarChar(500), null)
+//       .input('BusSeats', sql.VarChar(100), null)
+//       .input('FemaleSeatNo', sql.VarChar(150), null)
+//       .input('MaleSeatNo', sql.VarChar(150), null)
+//       .input('CreatedBy', sql.Int, CreatedBy)
+//       .input('BookedSeats', sql.Int, BookedSeats)
+//       .execute('sp_BusOperator');
+
+//     res.status(200).json({
+//       success: true,
+//       message: `Reduced ${BookedSeats} seat(s) successfully`,
+//       result: result.recordset || []
 //     });
-
-//     res.json(Object.values(buses));
 //   } catch (err) {
-//     console.error("SQL error:", err);
-//     res.status(500).json({ error: "Failed to fetch bus details" });
+//     console.error('❌ Error reducing seat:', err);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal Server Error',
+//       error: err.message
+//     });
 //   }
 // });
+
+/// ------------------- BUS SEAT MANAGEMENT APIS -------------------
+
+/// ✅ Reduce available seats after payment success
+app.post("/api/bus/reduceSeat", async (req, res) => {
+  try {
+    const { BusOperatorID, BookedSeats } = req.body;
+
+    if (!BusOperatorID || !BookedSeats) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const pool = await sql.connect(dbConfig);
+
+    // 1️⃣ Fetch current seats
+    const current = await pool.request()
+      .input("BusOperatorID", sql.Int, BusOperatorID)
+      .query(`SELECT BusSeats FROM BusOperator WHERE BusOperatorID = @BusOperatorID`);
+
+    if (current.recordset.length === 0) {
+      return res.status(404).json({ message: "Bus not found" });
+    }
+
+    const currentSeats = current.recordset[0].BusSeats;
+    const remainingSeats = Math.max(currentSeats - BookedSeats, 0);
+
+    // 2️⃣ Update seat count
+    await pool.request()
+      .input("BusOperatorID", sql.Int, BusOperatorID)
+      .input("BusSeats", sql.Int, remainingSeats)
+      .query(`
+        UPDATE BusOperator
+        SET BusSeats = @BusSeats
+        WHERE BusOperatorID = @BusOperatorID
+      `);
+
+    res.status(200).json({
+      success: true,
+      message: `✅ Reduced ${BookedSeats} seat(s) successfully.`,
+      remainingSeats,
+    });
+  } catch (error) {
+    console.error("❌ Error reducing seats:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+// ✅ Get remaining seats for a bus
+app.get("/api/bus/bookedSeats", async (req, res) => {
+  try {
+    const { busId } = req.query;
+    if (!busId) return res.status(400).json({ message: "Bus ID is required" });
+
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("BusOperatorID", sql.Int, busId)
+      .query(`SELECT BusSeats FROM BusOperator WHERE BusOperatorID = @BusOperatorID`);
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: "Bus not found" });
+    }
+
+    const remainingSeats = result.recordset[0].BusSeats;
+
+    res.status(200).json({
+      success: true,
+      remainingSeats,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching booked seats:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// ✅ Get seat layout + remaining seats + price dynamically
+app.get("/api/bus/seatLayout", async (req, res) => {
+  try {
+    const { busId } = req.query;
+    if (!busId) return res.status(400).json({ message: "Bus ID is required" });
+
+    const pool = await sql.connect(dbConfig);
+
+    // 1️⃣ Fetch seat layout + base info
+    const result = await pool.request()
+      .input("BusOperatorID", sql.Int, busId)
+      .query(`
+        SELECT 
+          b.BusSeats,
+          b.FemaleSeatNo,
+          b.MaleSeatNo,
+          d.WkEndSeatPrice,
+          d.WkDaySeatPrice,
+          b.BusType
+        FROM BusOperator b
+        LEFT JOIN BusBookingDetails d ON b.BusOperatorID = d.OperatorID
+        WHERE b.BusOperatorID = @BusOperatorID
+      `);
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: "Bus not found" });
+    }
+
+    const bus = result.recordset[0];
+
+    // 2️⃣ Parse seat layout from DB
+    const femaleSeats = bus.FemaleSeatNo ? bus.FemaleSeatNo.split(",").map(s => s.trim()) : [];
+    const maleSeats = bus.MaleSeatNo ? bus.MaleSeatNo.split(",").map(s => s.trim()) : [];
+    const allSeats = [...new Set([...femaleSeats, ...maleSeats])];
+
+    // 3️⃣ Pick price dynamically (weekday/weekend logic)
+    const today = new Date();
+    const day = today.getDay(); // 0=Sun, 6=Sat
+    const price = (day === 0 || day === 6)
+      ? bus.WkEndSeatPrice
+      : bus.WkDaySeatPrice;
+
+    res.status(200).json({
+      success: true,
+      busId,
+      remainingSeats: bus.BusSeats,
+      price,
+      seatLayout: allSeats,
+      busType: bus.BusType
+    });
+  } catch (error) {
+    console.error("❌ Error fetching seat layout:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+
+
+
+// ✅ GET booked seats for a specific bus
+app.get("/api/bus/bookedSeats", async (req, res) => {
+  try {
+    const busId = req.query.busId;
+    if (!busId)
+      return res.status(400).json({ success: false, message: "busId is required" });
+
+    const pool = await sql.connect(dbConfig);
+    const result = await pool
+      .request()
+      .input("BusOperatorID", sql.Int, busId)
+      .query(`SELECT SeatNo FROM BusBookingSeat WHERE BusOperatorID = @BusOperatorID`);
+
+    const bookedSeats = result.recordset.map((r) => r.SeatNo);
+    res.json({ success: true, bookedSeats });
+  } catch (err) {
+    console.error("❌ Error fetching booked seats:", err);
+    res.status(500).json({ success: false, message: "Error fetching seats" });
+  }
+});
+
+
+
+
+
+//////////////////////////////////////////
+
 
 // Book a seat
-// app.post("/api/bus-booking-seat", async (req, res) => {
-//   try {
-//     const payload = req.body;
-//     const pool = await sql.connect(dbConfig);
-//     const proc = "dbo.sp_BusBookingSeat";
-//     const saveFlag = payload.SavePassengerDetails === "Y" ? "Yes" : "No";
+app.post("/api/bus-booking-seat", async (req, res) => {
+  try {
+    const payload = req.body;
+    const pool = await sql.connect(dbConfig);
+    const proc = "dbo.sp_BusBookingSeat";
+    const saveFlag = payload.SavePassengerDetails === "Y" ? "Yes" : "No";
 
-//     const request = pool.request();
-//     request.input("Flag", sql.Char(1), "I");
-//     request.input("BusBookingSeatID", sql.Int, payload.BusBookingSeatID ?? 0);
-//     request.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
-//     request.input("BusOperatorID", sql.Int, payload.BusOperatorID);
-//     request.input("UserID", sql.Int, payload.UserID ?? 0);
-//     request.input("ForSelf", sql.Bit, payload.ForSelf ? 1 : 0);
-//     request.input("IsPrimary", sql.Int, payload.IsPrimary ?? 1);
-//     request.input("SeatNo", sql.NVarChar(50), payload.SeatNo ?? null);
-//     request.input("FirstName", sql.VarChar(250), payload.FirstName ?? null);
-//     request.input("MiddleName", sql.VarChar(250), payload.MiddleName ?? null);
-//     request.input("LastName", sql.VarChar(250), payload.LastName ?? null);
-//     request.input("Email", sql.VarChar(150), payload.Email ?? null);
-//     request.input("ContactNo", sql.VarChar(50), payload.ContactNo ?? null);
-//     request.input("Gender", sql.VarChar(50), payload.Gender ?? null);
-//     request.input("AadharNo", sql.VarChar(20), payload.AadharNo ?? null);
-//     request.input("PancardNo", sql.VarChar(20), payload.PancardNo ?? null);
-//     request.input("BloodGroup", sql.VarChar(10), payload.BloodGroup ?? null);
-//     request.input("DOB", sql.DateTime, safeDate(payload.DOB));
-//     request.input("FoodPref", sql.VarChar(100), payload.FoodPref ?? null);
-//     request.input("Disabled", sql.Bit, payload.Disabled ? 1 : 0);
-//     request.input("Pregnant", sql.Bit, payload.Pregnant ? 1 : 0);
-//     request.input("RegisteredCompanyNumber", sql.VarChar(50), payload.RegisteredCompanyNumber ?? null);
-//     request.input("RegisteredCompanyName", sql.VarChar(50), payload.RegisteredCompanyName ?? null);
-//     request.input("DrivingLicence", sql.VarChar(100), payload.DrivingLicence ?? null);
-//     request.input("PassportNo", sql.VarChar(100), payload.PassportNo ?? null);
-//     request.input("RationCard", sql.VarChar(100), payload.RationCard ?? null);
-//     request.input("VoterID", sql.VarChar(100), payload.VoterID ?? null);
-//     request.input("Others", sql.VarChar(500), payload.Others ?? null);
-//     request.input("NRI", sql.Bit, payload.NRI ? 1 : 0);
-//     request.input("CreatedBy", sql.Int, payload.CreatedBy ?? 1);
-//     request.input("SavePassengerDetails", sql.VarChar(50), saveFlag);
+    const request = pool.request();
+    request.input("Flag", sql.Char(1), "I");
+    request.input("BusBookingSeatID", sql.Int, payload.BusBookingSeatID ?? 0);
+    request.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
+    request.input("BusOperatorID", sql.Int, payload.BusOperatorID);
+    request.input("UserID", sql.Int, payload.UserID ?? 0);
+    request.input("ForSelf", sql.Bit, payload.ForSelf ? 1 : 0);
+    request.input("IsPrimary", sql.Int, payload.IsPrimary ?? 1);
+    request.input("SeatNo", sql.NVarChar(50), payload.SeatNo ?? null);
+    request.input("FirstName", sql.VarChar(250), payload.FirstName ?? null);
+    request.input("MiddleName", sql.VarChar(250), payload.MiddleName ?? null);
+    request.input("LastName", sql.VarChar(250), payload.LastName ?? null);
+    request.input("Email", sql.VarChar(150), payload.Email ?? null);
+    request.input("ContactNo", sql.VarChar(50), payload.ContactNo ?? null);
+    request.input("Gender", sql.VarChar(50), payload.Gender ?? null);
+    request.input("AadharNo", sql.VarChar(20), payload.AadharNo ?? null);
+    request.input("PancardNo", sql.VarChar(20), payload.PancardNo ?? null);
+    request.input("BloodGroup", sql.VarChar(10), payload.BloodGroup ?? null);
+    request.input("DOB", sql.DateTime, safeDate(payload.DOB));
+    request.input("FoodPref", sql.VarChar(100), payload.FoodPref ?? null);
+    request.input("Disabled", sql.Bit, payload.Disabled ? 1 : 0);
+    request.input("Pregnant", sql.Bit, payload.Pregnant ? 1 : 0);
+    request.input("RegisteredCompanyNumber", sql.VarChar(50), payload.RegisteredCompanyNumber ?? null);
+    request.input("RegisteredCompanyName", sql.VarChar(50), payload.RegisteredCompanyName ?? null);
+    request.input("DrivingLicence", sql.VarChar(100), payload.DrivingLicence ?? null);
+    request.input("PassportNo", sql.VarChar(100), payload.PassportNo ?? null);
+    request.input("RationCard", sql.VarChar(100), payload.RationCard ?? null);
+    request.input("VoterID", sql.VarChar(100), payload.VoterID ?? null);
+    request.input("Others", sql.VarChar(500), payload.Others ?? null);
+    request.input("NRI", sql.Bit, payload.NRI ? 1 : 0);
+    request.input("CreatedBy", sql.Int, payload.CreatedBy ?? 1);
+    request.input("SavePassengerDetails", sql.VarChar(50), saveFlag);
 
-//     const result = await request.execute(proc);
-//     res.status(201).json({ message: "Booking saved successfully", result: result.recordset });
-//   } catch (err) {
-//     console.error("SQL INSERT error:", err);
-//     res.status(500).json({ error: err.message });
-//   }
-// });
+    const result = await request.execute(proc);
+    res.status(201).json({ message: "Booking saved successfully", result: result.recordset });
+  } catch (err) {
+    console.error("SQL INSERT error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ------------------- USER SIGNUP & LOGIN -------------------
 
@@ -655,6 +864,32 @@ app.post("/api/submit-feedback", async (req, res) => {
 //     res.status(500).json({ success: false, message: err.message });
 //   }
 // });
+
+
+app.get("/api/busBoardingCounts", async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query(`
+      SELECT 
+          bo.BusOperatorID,
+          COUNT(bbp.BusBoardingPointID) AS NumBoardingPoints
+      FROM BusOperator bo
+      LEFT JOIN BusBookingSeat bbs 
+          ON bbs.BusOperatorID = bo.BusOperatorID
+      LEFT JOIN BusBoardingPoint bbp
+          ON bbp.BusBooKingDetailID = bbs.BusBookingDetailsID
+      GROUP BY bo.BusOperatorID;
+    `);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error", details: err.message });
+  } finally {
+    sql.close();
+  }
+});
+
+
 
 // ------------------- START SERVER -------------------
 app.listen(PORT, () => {
