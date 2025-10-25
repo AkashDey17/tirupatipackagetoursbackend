@@ -575,6 +575,7 @@ app.get("/api/bus/bookedSeats", async (req, res) => {
   }
 });
 
+
 // ✅ Get seat layout + remaining seats + price dynamically
 app.get("/api/bus/seatLayout", async (req, res) => {
   try {
@@ -583,14 +584,12 @@ app.get("/api/bus/seatLayout", async (req, res) => {
 
     const pool = await sql.connect(dbConfig);
 
-    // 1️⃣ Fetch seat layout + base info
+    // 1️⃣ Fetch operator info
     const result = await pool.request()
       .input("BusOperatorID", sql.Int, busId)
       .query(`
         SELECT 
           b.BusSeats,
-          b.FemaleSeatNo,
-          b.MaleSeatNo,
           d.WkEndSeatPrice,
           d.WkDaySeatPrice,
           b.BusType
@@ -599,18 +598,23 @@ app.get("/api/bus/seatLayout", async (req, res) => {
         WHERE b.BusOperatorID = @BusOperatorID
       `);
 
-    if (result.recordset.length === 0) {
+    if (result.recordset.length === 0)
       return res.status(404).json({ message: "Bus not found" });
-    }
 
     const bus = result.recordset[0];
 
-    // 2️⃣ Parse seat layout from DB
-    const femaleSeats = bus.FemaleSeatNo ? bus.FemaleSeatNo.split(",").map(s => s.trim()) : [];
-    const maleSeats = bus.MaleSeatNo ? bus.MaleSeatNo.split(",").map(s => s.trim()) : [];
-    const allSeats = [...new Set([...femaleSeats, ...maleSeats])];
+    // 2️⃣ Get all booked seats from BusBookingSeat table
+    const bookedRes = await pool.request()
+      .input("BusOperatorID", sql.Int, busId)
+      .query(`SELECT SeatNo FROM BusBookingSeat WHERE BusOperatorID = @BusOperatorID`);
 
-    // 3️⃣ Pick price dynamically (weekday/weekend logic)
+    const bookedSeats = bookedRes.recordset.map(r => r.SeatNo);
+
+    // 3️⃣ Generate seat IDs (example L1-L18, U1-U18)
+    const allSeats = [];
+    for (let i = 1; i <= 18; i++) allSeats.push(`L${i}`);
+    for (let i = 1; i <= 18; i++) allSeats.push(`U${i}`);
+
     const today = new Date();
     const day = today.getDay(); // 0=Sun, 6=Sat
     const price = (day === 0 || day === 6)
@@ -620,9 +624,10 @@ app.get("/api/bus/seatLayout", async (req, res) => {
     res.status(200).json({
       success: true,
       busId,
+      seatLayout: allSeats,
+      bookedSeats,
       remainingSeats: bus.BusSeats,
       price,
-      seatLayout: allSeats,
       busType: bus.BusType
     });
   } catch (error) {
@@ -632,10 +637,7 @@ app.get("/api/bus/seatLayout", async (req, res) => {
 });
 
 
-
-
-
-// ✅ GET booked seats for a specific bus
+// ✅ Updated /api/bus/bookedSeats endpoint
 app.get("/api/bus/bookedSeats", async (req, res) => {
   try {
     const busId = req.query.busId;
@@ -648,13 +650,43 @@ app.get("/api/bus/bookedSeats", async (req, res) => {
       .input("BusOperatorID", sql.Int, busId)
       .query(`SELECT SeatNo FROM BusBookingSeat WHERE BusOperatorID = @BusOperatorID`);
 
-    const bookedSeats = result.recordset.map((r) => r.SeatNo);
+    const bookedSeats = result.recordset.map(r => r.SeatNo);
     res.json({ success: true, bookedSeats });
   } catch (err) {
     console.error("❌ Error fetching booked seats:", err);
     res.status(500).json({ success: false, message: "Error fetching seats" });
   }
 });
+
+// ✅ New route to sync remaining seats
+app.post("/api/bus/syncSeats", async (req, res) => {
+  try {
+    const { BusOperatorID } = req.body;
+    const pool = await sql.connect(dbConfig);
+
+    // Count total booked seats
+    const countResult = await pool.request()
+      .input("BusOperatorID", sql.Int, BusOperatorID)
+      .query(`SELECT COUNT(*) AS TotalBooked FROM BusBookingSeat WHERE BusOperatorID = @BusOperatorID`);
+
+    const totalBooked = countResult.recordset[0].TotalBooked;
+
+    // Update BusOperator.BusSeats (remaining seats)
+    await pool.request()
+      .input("BusOperatorID", sql.Int, BusOperatorID)
+      .query(`
+        UPDATE BusOperator
+        SET BusSeats = TotalSeats - ${totalBooked}
+        WHERE BusOperatorID = @BusOperatorID
+      `);
+
+    res.json({ success: true, message: "Seat count synced successfully" });
+  } catch (error) {
+    console.error("❌ Error syncing seats:", error);
+    res.status(500).json({ success: false, message: "Error syncing seats" });
+  }
+});
+
 
 
 
