@@ -581,7 +581,7 @@ const axios = require("axios");
 
  const nodemailer = require("nodemailer");
  const bcrypt = require("bcryptjs");
-// require("dotenv").config();
+require("dotenv").config();
 
 
 const app = express();
@@ -589,7 +589,8 @@ app.use(cors());
 app.use(express.json());
 
 
-const PORT =   5000;
+const PORT = process.env.PORT || 5000;
+
 
 
 // ✅ Update this with your correct DB details
@@ -1236,7 +1237,7 @@ app.get("/api/busBoardingCounts", async (req, res) => {
 
 
 // ✅ Start the server
-app.listen(PORT, () => {
+app.listen(PORT,"0.0.0.0", () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
 
