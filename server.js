@@ -1,6 +1,6 @@
 
 
-// the below code is same  as sanchar6t code
+// // the below code is same  as sanchar6t code
 
 // const express = require("express");
 // const cors = require("cors");
@@ -44,34 +44,34 @@
 // // ------------------- ROUTES -------------------
 
 // // Send OTP
-// // app.post("/api/send-otp", async (req, res) => {
-// //   const { email, name } = req.body;
-// //   if (!email) return res.status(400).json({ error: "Email is required" });
+// app.post("/api/send-otp", async (req, res) => {
+//   const { email, name } = req.body;
+//   if (!email) return res.status(400).json({ error: "Email is required" });
 
-// //   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-// //   otpStore[email] = otp;
+//   const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//   otpStore[email] = otp;
 
-// //   try {
-// //     await transporter.sendMail({
-// //       from: `"Sanchar6T Support" <${process.env.EMAIL_USER}>`,
-// //       to: email,
-// //       subject: "Your One-Time Password (OTP) Verification",
-// //       html: `
-// //         <div style="font-family: Arial, sans-serif; color: #333;">
-// //           <h2>Hello ${name || "User"},</h2>
-// //           <p>Your OTP is:</p>
-// //           <h1 style="letter-spacing: 3px; color: #3D85C6;">${otp}</h1>
-// //           <p>Valid for <b>5 minutes</b>.</p>
-// //         </div>
-// //       `,
-// //     });
-// //     console.log(`OTP sent to ${email}: ${otp}`);
-// //     res.json({ success: true, message: "OTP sent" });
-// //   } catch (err) {
-// //     console.error("OTP error:", err);
-// //     res.status(500).json({ error: "Failed to send OTP" });
-// //   }
-// // });
+//   try {
+//     await transporter.sendMail({
+//       from: `"Sanchar6T Support" <${process.env.EMAIL_USER}>`,
+//       to: email,
+//       subject: "Your One-Time Password (OTP) Verification",
+//       html: `
+//         <div style="font-family: Arial, sans-serif; color: #333;">
+//           <h2>Hello ${name || "User"},</h2>
+//           <p>Your OTP is:</p>
+//           <h1 style="letter-spacing: 3px; color: #3D85C6;">${otp}</h1>
+//           <p>Valid for <b>5 minutes</b>.</p>
+//         </div>
+//       `,
+//     });
+//     console.log(`OTP sent to ${email}: ${otp}`);
+//     res.json({ success: true, message: "OTP sent" });
+//   } catch (err) {
+//     console.error("OTP error:", err);
+//     res.status(500).json({ error: "Failed to send OTP" });
+//   }
+// });
 
 // // Itinerary generation
 // app.post("/itinerary", async (req, res) => {
@@ -220,45 +220,6 @@
 // /// =======================
 // // Reduce Bus Seats API
 // // =======================
-// // app.post('/api/bus/reduceSeat', async (req, res) => {
-// //   const { BusOperatorID, BusNo, CreatedBy, BookedSeats } = req.body;
-
-// //   if (!BusOperatorID || !BusNo || !CreatedBy || !BookedSeats) {
-// //     return res.status(400).json({ 
-// //       message: 'Missing required fields. Please provide BusOperatorID, BusNo, CreatedBy, and BookedSeats.' 
-// //     });
-// //   }
-
-// //   try {
-// //     const pool = await sql.connect(dbConfig);
-
-// //     const result = await pool.request()
-// //       .input('Flag', sql.Char(1), 'B')
-// //       .input('BusOperatorID', sql.Int, BusOperatorID)
-// //       .input('BusNo', sql.VarChar(200), BusNo)
-// //       .input('BusType', sql.VarChar(500), null)
-// //       .input('BusSeats', sql.VarChar(100), null)
-// //       .input('FemaleSeatNo', sql.VarChar(150), null)
-// //       .input('MaleSeatNo', sql.VarChar(150), null)
-// //       .input('CreatedBy', sql.Int, CreatedBy)
-// //       .input('BookedSeats', sql.Int, BookedSeats)
-// //       .execute('sp_BusOperator');
-
-// //     res.status(200).json({
-// //       success: true,
-// //       message: `Reduced ${BookedSeats} seat(s) successfully`,
-// //       result: result.recordset || []
-// //     });
-// //   } catch (err) {
-// //     console.error('❌ Error reducing seat:', err);
-// //     res.status(500).json({
-// //       success: false,
-// //       message: 'Internal Server Error',
-// //       error: err.message
-// //     });
-// //   }
-// // });
-
 // /// ------------------- BUS SEAT MANAGEMENT APIS -------------------
 
 // /// ✅ Reduce available seats after payment success
@@ -446,13 +407,6 @@
 // });
 
 
-
-
-
-
-// //////////////////////////////////////////
-
-
 // // Book a seat
 // app.post("/api/bus-booking-seat", async (req, res) => {
 //   try {
@@ -504,7 +458,7 @@
 
 // // ------------------- USER SIGNUP & LOGIN -------------------
 
-// // mail
+
 
 //  app.get("/api/package-list", (req, res) => {
 //   const packages = [
@@ -569,91 +523,6 @@
 //   }
 // });
 
-// // mail
-
-// // Signup
-// // app.post("/api/signup", async (req, res) => {
-// //   try {
-// //     const { Fname, Mname, Lname, email, phoneNumber, password, gender } = req.body;
-// //     if (!Fname || !Lname || !password || (!email && !phoneNumber)) {
-// //       return res.status(400).json({ success: false, message: "Fill all required fields" });
-// //     }
-
-// //     const hashedPassword = await bcrypt.hash(password, 10);
-// //     const pool = await sql.connect(dbConfig);
-
-// //     await pool.request()
-// //       .input("Flag", sql.Char(1), "I")
-// //       .input("UserID", sql.Int, 0)
-// //       .input("UserType", sql.Int, 2)
-// //       .input("Status", sql.VarChar(250), "true")
-// //       .input("Password", sql.VarChar(2000), hashedPassword)
-// //       .input("FirstName", sql.VarChar(250), Fname)
-// //       .input("MiddleName", sql.VarChar(250), Mname || null)
-// //       .input("LastName", sql.VarChar(250), Lname)
-// //       .input("Email", sql.VarChar(500), email || "")
-// //       .input("ContactNo", sql.VarChar(50), phoneNumber || "")
-// //       .input("Gender", sql.VarChar(50), gender || null)
-// //       .input("CreatedBy", sql.Int, 0)
-// //       .execute("sp_User");
-
-// //     res.json({
-// //       success: true,
-// //       message: "Signup successful!",
-// //       user: { Fname, Mname, Lname, email, phoneNumber, gender }
-// //     });
-// //   } catch (err) {
-// //     console.error("Signup error:", err);
-// //     res.status(500).json({ success: false, message: err.message });
-// //   }
-// // });
-
-// // Login
-// // app.post("/api/login", async (req, res) => {
-// //   try {
-// //     const { email, phoneNumber, password } = req.body;
-// //     if (!password || (!email && !phoneNumber)) return res.status(400).json({ success: false, message: "Fill all required fields" });
-
-// //     const pool = await sql.connect(dbConfig);
-// //     let query = `
-// //       SELECT spd.UserID, spd.FirstName, spd.MiddleName, spd.LastName, spd.Email, spd.ContactNo, spd.Gender, us.Password
-// //       FROM SavedPassengerDtls spd
-// //       JOIN UserSecurity us ON spd.UserID = us.UserID
-// //       WHERE `;
-
-// //     if (email && phoneNumber) query += `(spd.Email = @email OR spd.ContactNo = @phoneNumber)`;
-// //     else if (email) query += `spd.Email = @email`;
-// //     else if (phoneNumber) query += `spd.ContactNo = @phoneNumber`;
-
-// //     const request = pool.request();
-// //     if (email) request.input("email", sql.VarChar(500), email);
-// //     if (phoneNumber) request.input("phoneNumber", sql.VarChar(50), phoneNumber);
-
-// //     const result = await request.query(query);
-// //     if (!result.recordset.length) return res.status(400).json({ success: false, message: "User not found" });
-
-// //     const user = result.recordset[0];
-// //     const isMatch = await bcrypt.compare(password, user.Password);
-// //     if (!isMatch) return res.status(400).json({ success: false, message: "Invalid credentials" });
-
-// //     res.json({
-// //       success: true,
-// //       message: "Login successful",
-// //       user: {
-// //         Fname: user.FirstName,
-// //         Mname: user.MiddleName,
-// //         Lname: user.LastName,
-// //         email: user.Email,
-// //         phoneNumber: user.ContactNo,
-// //         gender: user.Gender,
-// //         UserID: user.UserID
-// //       }
-// //     });
-// //   } catch (err) {
-// //     console.error("Login error:", err);
-// //     res.status(500).json({ success: false, message: err.message });
-// //   }
-// // });
 
 
 // app.get("/api/busBoardingCounts", async (req, res) => {
@@ -687,6 +556,691 @@
 // });
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//////////////////////////////////////////////////
+
+
+const express = require("express");
+const sql = require("mssql");
+
+ const cors = require("cors");
+const axios = require("axios");
+
+ const nodemailer = require("nodemailer");
+ const bcrypt = require("bcryptjs");
+// require("dotenv").config();
+
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+
+const PORT =   5000;
+
+
+// ✅ Update this with your correct DB details
+// const config = {
+//   user: "sqladmin", // RDS master username
+//   password: "Sanchar6t1", // RDS master password
+//   server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com", // your RDS endpoint
+//   port: 1433,
+//   database: "Sanchar6T_Dev", // ✅ your actual DB name
+//   options: {
+//     encrypt: true,
+//     trustServerCertificate: true,
+//   },
+// };
+
+const dbConfig = {
+  user: "sqladmin",
+  password: "Sanchar6t1",
+  server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com",
+  port: 1433,
+  database: "Sanchar6T_Dev",
+  options: {
+    encrypt: true,
+    trustServerCertificate: true,
+  },
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000,
+  },
+};
+
+
+
+
+// ✅ 1. Test database connection
+app.get("/api/test-connection", async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query("SELECT GETDATE() AS CurrentTime;");
+    res.json({
+      success: true,
+      message: "Connected successfully to RDS SQL Server!",
+      data: result.recordset,
+    });
+  } catch (err) {
+    console.error("❌ Connection failed:", err);
+    res.status(500).json({ success: false, error: err.message });
+  } finally {
+    sql.close();
+  }
+});
+
+// ✅ 2. List all tables
+app.get("/api/tables", async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query(`
+      SELECT TABLE_SCHEMA, TABLE_NAME 
+      FROM INFORMATION_SCHEMA.TABLES 
+      WHERE TABLE_TYPE = 'BASE TABLE'
+    `);
+    res.json({ success: true, tables: result.recordset });
+  } catch (err) {
+    console.error("❌ Error fetching tables:", err);
+    res.status(500).json({ success: false, error: err.message });
+  } finally {
+    sql.close();
+  }
+});
+
+// ✅ 3. List all views
+app.get("/api/views", async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query(`
+      SELECT TABLE_SCHEMA, TABLE_NAME 
+      FROM INFORMATION_SCHEMA.VIEWS
+    `);
+    res.json({ success: true, views: result.recordset });
+  } catch (err) {
+    console.error("❌ Error fetching views:", err);
+    res.status(500).json({ success: false, error: err.message });
+  } finally {
+    sql.close();
+  }
+});
+
+// ✅ 4. List all stored procedures
+app.get("/api/stored-procedures", async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query(`
+      SELECT SPECIFIC_SCHEMA, SPECIFIC_NAME 
+      FROM INFORMATION_SCHEMA.ROUTINES 
+      WHERE ROUTINE_TYPE = 'PROCEDURE'
+    `);
+    res.json({ success: true, procedures: result.recordset });
+  } catch (err) {
+    console.error("❌ Error fetching stored procedures:", err);
+    res.status(500).json({ success: false, error: err.message });
+  } finally {
+    sql.close();
+  }
+});
+
+// ✅ 5. Fetch top 10 rows from a given table
+app.get("/api/data/:tableName", async (req, res) => {
+  const { tableName } = req.params;
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool
+      .request()
+      .query(`SELECT TOP 10 * FROM [${tableName}]`);
+    res.json({ success: true, table: tableName, data: result.recordset });
+  } catch (err) {
+    console.error("❌ Error fetching data:", err);
+    res.status(500).json({ success: false, error: err.message });
+  } finally {
+    sql.close();
+  }
+});
+
+app.get("/", (req, res) => {
+  res.send("✅ Server is running");
+});
+
+// ------------------- OTP SETUP -------------------
+let otpStore = {}; // Use Redis or DB in production
+
+// ------------------- HELPERS -------------------
+function safeDate(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// ------------------- ROUTES -------------------
+
+// Send OTP
+app.post("/api/send-otp", async (req, res) => {
+  const { email, name } = req.body;
+  if (!email) return res.status(400).json({ error: "Email is required" });
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  otpStore[email] = otp;
+
+  try {
+    await transporter.sendMail({
+      from: `"Sanchar6T Support" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Your One-Time Password (OTP) Verification",
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #333;">
+          <h2>Hello ${name || "User"},</h2>
+          <p>Your OTP is:</p>
+          <h1 style="letter-spacing: 3px; color: #3D85C6;">${otp}</h1>
+          <p>Valid for <b>5 minutes</b>.</p>
+        </div>
+      `,
+    });
+    console.log(`OTP sent to ${email}: ${otp}`);
+    res.json({ success: true, message: "OTP sent" });
+  } catch (err) {
+    console.error("OTP error:", err);
+    res.status(500).json({ error: "Failed to send OTP" });
+  }
+});
+
+// Itinerary generation
+app.post("/itinerary", async (req, res) => {
+  try {
+    const { city, days } = req.body;
+    const prompt = `Plan a ${days}-day itinerary for ${city}. Include timings, places, meals, transport, fun activities.`;
+
+    const response = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are a travel itinerary planner." },
+          { role: "user", content: prompt },
+        ],
+        max_tokens: 1200,
+        temperature: 0.7,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    let itineraryText = response.data.choices[0].message.content;
+    itineraryText = itineraryText.replace(/#+\s?/g, "").replace(/\*\*/g, "");
+    itineraryText = itineraryText.replace(/(Day\s*\d+)/gi, `<h3 style="color:#226cb2;">$1</h3>`);
+
+    res.json({ itinerary: itineraryText });
+  } catch (err) {
+    console.error(err.message, err.response?.data);
+    res.status(500).json({ error: "Failed to generate itinerary" });
+  }
+});
+
+// ------------------- BUS BOOKING DETAILS -------------------
+
+// Get all bus booking details
+app.get("/api/bus-booking-details", async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query(`
+      SELECT TOP 1000 *
+      FROM [dbo].[BusBookingDetails]
+      ORDER BY BusBooKingDetailID
+    `);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("SQL GET error:", err);
+    res.status(500).json({ error: "Failed to fetch bus booking details" });
+  }
+});
+
+// Get bus booking detail by ID
+app.get("/api/bus-booking-details/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("BusBooKingDetailID", sql.Int, id)
+      .query("SELECT * FROM [dbo].[BusBookingDetails] WHERE BusBooKingDetailID = @BusBooKingDetailID");
+    if (!result.recordset.length) return res.status(404).json({ message: "Not found" });
+    res.json(result.recordset[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch bus booking detail" });
+  }
+});
+
+// Insert bus booking detail
+app.post("/api/bus-booking-details", async (req, res) => {
+  try {
+    const { OperatorID, PackageID, WkEndSeatPrice, WkDaySeatPrice, DepartureTime, Arrivaltime, Status, CreatedBy } = req.body;
+    const pool = await sql.connect(dbConfig);
+
+    await pool.request()
+      .input("Flag", sql.Char(1), "I")
+      .input("BusBooKingDetailID", sql.Int, 0)
+      .input("OperatorID", sql.Int, OperatorID)
+      .input("PackageID", sql.Int, PackageID)
+      .input("WkEndSeatPrice", sql.Numeric(18,0), WkEndSeatPrice)
+      .input("WkDaySeatPrice", sql.Numeric(18,0), WkDaySeatPrice)
+      .input("DepartureTime", sql.DateTime, safeDate(DepartureTime))
+      .input("Arrivaltime", sql.DateTime, safeDate(Arrivaltime))
+      .input("AvaialbleSeats", sql.DateTime, null)
+      .input("Status", sql.VarChar(250), Status)
+      .input("CreatedBy", sql.Int, CreatedBy)
+      .execute("sp_BusBookingDetails");
+
+    res.status(201).json({ message: "Bus booking detail created successfully" });
+  } catch (err) {
+    console.error("SQL INSERT error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get all buses with amenities
+app.get("/api/bus-details", async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query(`
+      SELECT 
+        b.[BusBooKingDetailID],
+        b.[OperatorID],
+        b.[PackageID],
+        b.[WkEndSeatPrice],
+        b.[WkDaySeatPrice],
+        b.[DepartureTime],
+        b.[Arrivaltime],
+        b.[Status],
+        b.[PackageName],
+        b.[BusNo],
+        b.[BusSeats],
+        b.[BusType],
+        b.[FemaleSeatNo],
+        a.[AMName]
+      FROM [dbo].[vw_BusBookingDetails] b
+      LEFT JOIN [dbo].[vw_BusAmenities] a
+        ON b.OperatorID = a.BusOperatorID
+    `);
+
+    const buses = {};
+    result.recordset.forEach(row => {
+      if (!buses[row.BusBooKingDetailID]) {
+        buses[row.BusBooKingDetailID] = { ...row, amenities: [] };
+      }
+      if (row.AMName) buses[row.BusBooKingDetailID].amenities.push(row.AMName);
+    });
+
+    res.json(Object.values(buses));
+  } catch (err) {
+    console.error("SQL error:", err);
+    res.status(500).json({ error: "Failed to fetch bus details" });
+  }
+});
+
+/////////////////////////////////////////
+
+
+// ------------------- below are apis for seat blocking after payment is sucessful -------------------
+
+/// =======================
+// Reduce Bus Seats API
+// =======================
+/// ------------------- BUS SEAT MANAGEMENT APIS -------------------
+
+/// ✅ Reduce available seats after payment success
+app.post("/api/bus/reduceSeat", async (req, res) => {
+  try {
+    const { BusOperatorID, BookedSeats } = req.body;
+
+    if (!BusOperatorID || !BookedSeats) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const pool = await sql.connect(dbConfig);
+
+    // 1️⃣ Fetch current seats
+    const current = await pool.request()
+      .input("BusOperatorID", sql.Int, BusOperatorID)
+      .query(`SELECT BusSeats FROM BusOperator WHERE BusOperatorID = @BusOperatorID`);
+
+    if (current.recordset.length === 0) {
+      return res.status(404).json({ message: "Bus not found" });
+    }
+
+    const currentSeats = current.recordset[0].BusSeats;
+    const remainingSeats = Math.max(currentSeats - BookedSeats, 0);
+
+    // 2️⃣ Update seat count
+    await pool.request()
+      .input("BusOperatorID", sql.Int, BusOperatorID)
+      .input("BusSeats", sql.Int, remainingSeats)
+      .query(`
+        UPDATE BusOperator
+        SET BusSeats = @BusSeats
+        WHERE BusOperatorID = @BusOperatorID
+      `);
+
+    res.status(200).json({
+      success: true,
+      message: `✅ Reduced ${BookedSeats} seat(s) successfully.`,
+      remainingSeats,
+    });
+  } catch (error) {
+    console.error("❌ Error reducing seats:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+// ✅ Get remaining seats for a bus
+app.get("/api/bus/bookedSeats", async (req, res) => {
+  try {
+    const { busId } = req.query;
+    if (!busId) return res.status(400).json({ message: "Bus ID is required" });
+
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("BusOperatorID", sql.Int, busId)
+      .query(`SELECT BusSeats FROM BusOperator WHERE BusOperatorID = @BusOperatorID`);
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: "Bus not found" });
+    }
+
+    const remainingSeats = result.recordset[0].BusSeats;
+
+    res.status(200).json({
+      success: true,
+      remainingSeats,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching booked seats:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+// ✅ Get seat layout + remaining seats + price dynamically
+app.get("/api/bus/seatLayout", async (req, res) => {
+  try {
+    const { busId } = req.query;
+    if (!busId) return res.status(400).json({ message: "Bus ID is required" });
+
+    const pool = await sql.connect(dbConfig);
+
+    // 1️⃣ Fetch operator info
+    const result = await pool.request()
+      .input("BusOperatorID", sql.Int, busId)
+      .query(`
+        SELECT 
+          b.BusSeats,
+          d.WkEndSeatPrice,
+          d.WkDaySeatPrice,
+          b.BusType
+        FROM BusOperator b
+        LEFT JOIN BusBookingDetails d ON b.BusOperatorID = d.OperatorID
+        WHERE b.BusOperatorID = @BusOperatorID
+      `);
+
+    if (result.recordset.length === 0)
+      return res.status(404).json({ message: "Bus not found" });
+
+    const bus = result.recordset[0];
+
+    // 2️⃣ Get all booked seats from BusBookingSeat table
+    const bookedRes = await pool.request()
+      .input("BusOperatorID", sql.Int, busId)
+      .query(`SELECT SeatNo FROM BusBookingSeat WHERE BusOperatorID = @BusOperatorID`);
+
+    const bookedSeats = bookedRes.recordset.map(r => r.SeatNo);
+
+    // 3️⃣ Generate seat IDs (example L1-L18, U1-U18)
+    const allSeats = [];
+    for (let i = 1; i <= 18; i++) allSeats.push(`L${i}`);
+    for (let i = 1; i <= 18; i++) allSeats.push(`U${i}`);
+
+    const today = new Date();
+    const day = today.getDay(); // 0=Sun, 6=Sat
+    const price = (day === 0 || day === 6)
+      ? bus.WkEndSeatPrice
+      : bus.WkDaySeatPrice;
+
+    res.status(200).json({
+      success: true,
+      busId,
+      seatLayout: allSeats,
+      bookedSeats,
+      remainingSeats: bus.BusSeats,
+      price,
+      busType: bus.BusType
+    });
+  } catch (error) {
+    console.error("❌ Error fetching seat layout:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+// ✅ Updated /api/bus/bookedSeats endpoint
+app.get("/api/bus/bookedSeats", async (req, res) => {
+  try {
+    const busId = req.query.busId;
+    if (!busId)
+      return res.status(400).json({ success: false, message: "busId is required" });
+
+    const pool = await sql.connect(dbConfig);
+    const result = await pool
+      .request()
+      .input("BusOperatorID", sql.Int, busId)
+      .query(`SELECT SeatNo FROM BusBookingSeat WHERE BusOperatorID = @BusOperatorID`);
+
+    const bookedSeats = result.recordset.map(r => r.SeatNo);
+    res.json({ success: true, bookedSeats });
+  } catch (err) {
+    console.error("❌ Error fetching booked seats:", err);
+    res.status(500).json({ success: false, message: "Error fetching seats" });
+  }
+});
+
+// ✅ New route to sync remaining seats
+app.post("/api/bus/syncSeats", async (req, res) => {
+  try {
+    const { BusOperatorID } = req.body;
+    const pool = await sql.connect(dbConfig);
+
+    // Count total booked seats
+    const countResult = await pool.request()
+      .input("BusOperatorID", sql.Int, BusOperatorID)
+      .query(`SELECT COUNT(*) AS TotalBooked FROM BusBookingSeat WHERE BusOperatorID = @BusOperatorID`);
+
+    const totalBooked = countResult.recordset[0].TotalBooked;
+
+    // Update BusOperator.BusSeats (remaining seats)
+    await pool.request()
+      .input("BusOperatorID", sql.Int, BusOperatorID)
+      .query(`
+        UPDATE BusOperator
+        SET BusSeats = TotalSeats - ${totalBooked}
+        WHERE BusOperatorID = @BusOperatorID
+      `);
+
+    res.json({ success: true, message: "Seat count synced successfully" });
+  } catch (error) {
+    console.error("❌ Error syncing seats:", error);
+    res.status(500).json({ success: false, message: "Error syncing seats" });
+  }
+});
+
+
+// Book a seat
+app.post("/api/bus-booking-seat", async (req, res) => {
+  try {
+    const payload = req.body;
+    const pool = await sql.connect(dbConfig);
+    const proc = "dbo.sp_BusBookingSeat";
+    const saveFlag = payload.SavePassengerDetails === "Y" ? "Yes" : "No";
+
+    const request = pool.request();
+    request.input("Flag", sql.Char(1), "I");
+    request.input("BusBookingSeatID", sql.Int, payload.BusBookingSeatID ?? 0);
+    request.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
+    request.input("BusOperatorID", sql.Int, payload.BusOperatorID);
+    request.input("UserID", sql.Int, payload.UserID ?? 0);
+    request.input("ForSelf", sql.Bit, payload.ForSelf ? 1 : 0);
+    request.input("IsPrimary", sql.Int, payload.IsPrimary ?? 1);
+    request.input("SeatNo", sql.NVarChar(50), payload.SeatNo ?? null);
+    request.input("FirstName", sql.VarChar(250), payload.FirstName ?? null);
+    request.input("MiddleName", sql.VarChar(250), payload.MiddleName ?? null);
+    request.input("LastName", sql.VarChar(250), payload.LastName ?? null);
+    request.input("Email", sql.VarChar(150), payload.Email ?? null);
+    request.input("ContactNo", sql.VarChar(50), payload.ContactNo ?? null);
+    request.input("Gender", sql.VarChar(50), payload.Gender ?? null);
+    request.input("AadharNo", sql.VarChar(20), payload.AadharNo ?? null);
+    request.input("PancardNo", sql.VarChar(20), payload.PancardNo ?? null);
+    request.input("BloodGroup", sql.VarChar(10), payload.BloodGroup ?? null);
+    request.input("DOB", sql.DateTime, safeDate(payload.DOB));
+    request.input("FoodPref", sql.VarChar(100), payload.FoodPref ?? null);
+    request.input("Disabled", sql.Bit, payload.Disabled ? 1 : 0);
+    request.input("Pregnant", sql.Bit, payload.Pregnant ? 1 : 0);
+    request.input("RegisteredCompanyNumber", sql.VarChar(50), payload.RegisteredCompanyNumber ?? null);
+    request.input("RegisteredCompanyName", sql.VarChar(50), payload.RegisteredCompanyName ?? null);
+    request.input("DrivingLicence", sql.VarChar(100), payload.DrivingLicence ?? null);
+    request.input("PassportNo", sql.VarChar(100), payload.PassportNo ?? null);
+    request.input("RationCard", sql.VarChar(100), payload.RationCard ?? null);
+    request.input("VoterID", sql.VarChar(100), payload.VoterID ?? null);
+    request.input("Others", sql.VarChar(500), payload.Others ?? null);
+    request.input("NRI", sql.Bit, payload.NRI ? 1 : 0);
+    request.input("CreatedBy", sql.Int, payload.CreatedBy ?? 1);
+    request.input("SavePassengerDetails", sql.VarChar(50), saveFlag);
+
+    const result = await request.execute(proc);
+    res.status(201).json({ message: "Booking saved successfully", result: result.recordset });
+  } catch (err) {
+    console.error("SQL INSERT error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ------------------- USER SIGNUP & LOGIN -------------------
+
+
+
+ app.get("/api/package-list", (req, res) => {
+  const packages = [
+    { PackageID: "1", PackageName: "Tirupati 1 Night / 1 Days Dharma Darshan Package" },
+    { PackageID: "2", PackageName: "Divine Blessings & Sacred Serenity – Tirupati & Srikalahasti in 2 Days 2 Nights" }
+  ];
+  res.json(packages);
+});
+// Hard-coded transporter for tirupatipackagetours.com email
+const transporter = nodemailer.createTransport({
+  host: "smtpout.secureserver.net", // GoDaddy SMTP
+  port: 465,
+  secure: true, // SSL
+  auth: {
+    user: "enquiry@tirupatipackagetours.com", // your domain email
+    pass: "Nagesh1987@",                     // actual email password
+  },
+});
+
+// Optional: Verify SMTP connection on startup
+transporter.verify((err, success) => {
+  if (err) {
+    console.error("SMTP connection failed:", err);
+  } else {
+    console.log("✅ SMTP server is ready to send emails");
+  }
+});
+
+// Contact form API endpoint
+app.post("/api/submit-feedback", async (req, res) => {
+  const { name, emailId, contactNo, userFeedback, packageId } = req.body;
+
+  // Validate fields
+  if (!name || !emailId || !contactNo || !userFeedback || !packageId) {
+    return res.status(400).json({ success: false, message: "All fields are required" });
+  }
+
+  const mailOptions = {
+    from: `"Website Contact" <enquiry@tirupatipackagetours.com>`, // must match SMTP user
+    to: "enquiry@tirupatipackagetours.com",                        // where to receive emails
+    subject: `New Contact Form Submission - Package ID: ${packageId}`,
+    html: `
+      <h2>New Contact Form Submission</h2>
+      <p><strong>Name:</strong> ${name}</p>
+      <p><strong>Email:</strong> ${emailId}</p>
+      <p><strong>Phone:</strong> ${contactNo}</p>
+      <p><strong>Package ID:</strong> ${packageId}</p>
+      <p><strong>Feedback:</strong><br/>${userFeedback}</p>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.json({ success: true, message: "Feedback submitted successfully" });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to send email",
+      error: error.response || error.toString(),
+    });
+  }
+});
+
+
+
+app.get("/api/busBoardingCounts", async (req, res) => {
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request().query(`
+      SELECT 
+          bo.BusOperatorID,
+          COUNT(bbp.BusBoardingPointID) AS NumBoardingPoints
+      FROM BusOperator bo
+      LEFT JOIN BusBookingSeat bbs 
+          ON bbs.BusOperatorID = bo.BusOperatorID
+      LEFT JOIN BusBoardingPoint bbp
+          ON bbp.BusBooKingDetailID = bbs.BusBookingDetailsID
+      GROUP BY bo.BusOperatorID;
+    `);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database error", details: err.message });
+  } finally {
+    sql.close();
+  }
+});
+
+
+// ✅ Start the server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+});
+
+/////////////////////////////////////////////////////////////////////
 
 // the below code is same  as sanchar6t code
 
@@ -1026,131 +1580,131 @@
 
 
 // server.js
-const express = require("express");
-const cors = require("cors");
-const nodemailer = require("nodemailer");
-const SibApiV3Sdk = require('@sendinblue/client');
-const dotenv = require("dotenv");
+// const express = require("express");
+// const cors = require("cors");
+// const nodemailer = require("nodemailer");
+// const SibApiV3Sdk = require('@sendinblue/client');
+// const dotenv = require("dotenv");
 
-dotenv.config();
+// dotenv.config();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+// const app = express();
+// app.use(cors());
+// app.use(express.json());
 
-// ✅ Health check
-app.get("/", (req, res) => {
-  res.send("Backend is running successfully 🚀");
-});
+// // ✅ Health check
+// app.get("/", (req, res) => {
+//   res.send("Backend is running successfully 🚀");
+// });
 
-// ✅ Mock API to return package list
-app.get("/api/package-list", (req, res) => {
-  const packages = [
-    { PackageID: 1, PackageName: "  APTDC Tirupati 1 Night / 1 Days Dharma Darshan Package" },
-    { PackageID: 2, PackageName: "Divine Blessings & Sacred Serenity – Tirupati & Srikalahasti in 2 Days 2 Nights" },
+// // ✅ Mock API to return package list
+// app.get("/api/package-list", (req, res) => {
+//   const packages = [
+//     { PackageID: 1, PackageName: "  APTDC Tirupati 1 Night / 1 Days Dharma Darshan Package" },
+//     { PackageID: 2, PackageName: "Divine Blessings & Sacred Serenity – Tirupati & Srikalahasti in 2 Days 2 Nights" },
     
-  ];
-  res.json(packages);
-});
+//   ];
+//   res.json(packages);
+// });
 
 
 
-// Hard-coded transporter for tirupatipackagetours.com email
-const transporter = nodemailer.createTransport({
-  host: "smtpout.secureserver.net", // GoDaddy SMTP
-  port: 465,
-  secure: true, // SSL
-  auth: {
-    user: "enquiry@tirupatipackagetours.com", // your domain email
-    pass: "Nagesh1987@",                     // actual email password
-  },
-});
+// // Hard-coded transporter for tirupatipackagetours.com email
+// const transporter = nodemailer.createTransport({
+//   host: "smtpout.secureserver.net", // GoDaddy SMTP
+//   port: 465,
+//   secure: true, // SSL
+//   auth: {
+//     user: "enquiry@tirupatipackagetours.com", // your domain email
+//     pass: "Nagesh1987@",                     // actual email password
+//   },
+// });
 
-// Optional: Verify SMTP connection on startup
-transporter.verify((err, success) => {
-  if (err) {
-    console.error("SMTP connection failed:", err);
-  } else {
-    console.log("✅ SMTP server is ready to send emails");
-  }
-});
-
-// Contact form API endpoint
-app.post("/api/submit-feedback", async (req, res) => {
-  const { name, emailId, contactNo, userFeedback, packageId } = req.body;
-
-  // Validate fields
-  if (!name || !emailId || !contactNo || !userFeedback || !packageId) {
-    return res.status(400).json({ success: false, message: "All fields are required" });
-  }
-
-  const mailOptions = {
-    from: `"Website Contact" <enquiry@tirupatipackagetours.com>`, // must match SMTP user
-    to: "enquiry@tirupatipackagetours.com",                        // where to receive emails
-    subject: `New Contact Form Submission - Package ID: ${packageId}`,
-    html: `
-      <h2>New Contact Form Submission</h2>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${emailId}</p>
-      <p><strong>Phone:</strong> ${contactNo}</p>
-      <p><strong>Package ID:</strong> ${packageId}</p>
-      <p><strong>Feedback:</strong><br/>${userFeedback}</p>
-    `,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    res.json({ success: true, message: "Feedback submitted successfully" });
-  } catch (error) {
-    console.error("Error sending email:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to send email",
-      error: error.response || error.toString(),
-    });
-  }
-});
-
-
-
-// ✅ Feedback submission via WhatsApp
-// app.post("/api/submit-feedback", (req, res) => {
-//   const { name, contactNo, emailId, userFeedback, packageId } = req.body;
-
-//   if (!name || !contactNo || !emailId || !userFeedback || !packageId) {
-//     return res.status(400).json({ success: false, message: "Missing required fields" });
-//   }
-
-//   try {
-//     // Create WhatsApp message link
-//     const adminWhatsAppNumber = "919964060505"; // Replace with your number with country code
-//     const message = `
-// New Inquiry:
-// Name: ${name}
-// Email: ${emailId}
-// Phone: ${contactNo}
-// Package ID: ${packageId}
-// Message: ${userFeedback}
-// `;
-
-//     // URL encode the message
-//     const whatsappUrl = `https://wa.me/${adminWhatsAppNumber}?text=${encodeURIComponent(message)}`;
-
-//     console.log(`📩 Feedback received from ${name}, open WhatsApp link: ${whatsappUrl}`);
-
-//     res.json({
-//       success: true,
-//       message: "Feedback ready to send via WhatsApp",
-//       whatsappUrl
-//     });
-
-//   } catch (error) {
-//     console.error("❌ WhatsApp message preparation failed:", error);
-//     res.status(500).json({ success: false, message: "Error preparing WhatsApp message" });
+// // Optional: Verify SMTP connection on startup
+// transporter.verify((err, success) => {
+//   if (err) {
+//     console.error("SMTP connection failed:", err);
+//   } else {
+//     console.log("✅ SMTP server is ready to send emails");
 //   }
 // });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, "0.0.0.0", () =>
-  console.log(`✅ Server running on port ${PORT}`)
-);
+// // Contact form API endpoint
+// app.post("/api/submit-feedback", async (req, res) => {
+//   const { name, emailId, contactNo, userFeedback, packageId } = req.body;
+
+//   // Validate fields
+//   if (!name || !emailId || !contactNo || !userFeedback || !packageId) {
+//     return res.status(400).json({ success: false, message: "All fields are required" });
+//   }
+
+//   const mailOptions = {
+//     from: `"Website Contact" <enquiry@tirupatipackagetours.com>`, // must match SMTP user
+//     to: "enquiry@tirupatipackagetours.com",                        // where to receive emails
+//     subject: `New Contact Form Submission - Package ID: ${packageId}`,
+//     html: `
+//       <h2>New Contact Form Submission</h2>
+//       <p><strong>Name:</strong> ${name}</p>
+//       <p><strong>Email:</strong> ${emailId}</p>
+//       <p><strong>Phone:</strong> ${contactNo}</p>
+//       <p><strong>Package ID:</strong> ${packageId}</p>
+//       <p><strong>Feedback:</strong><br/>${userFeedback}</p>
+//     `,
+//   };
+
+//   try {
+//     await transporter.sendMail(mailOptions);
+//     res.json({ success: true, message: "Feedback submitted successfully" });
+//   } catch (error) {
+//     console.error("Error sending email:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to send email",
+//       error: error.response || error.toString(),
+//     });
+//   }
+// });
+
+
+
+// // ✅ Feedback submission via WhatsApp
+// // app.post("/api/submit-feedback", (req, res) => {
+// //   const { name, contactNo, emailId, userFeedback, packageId } = req.body;
+
+// //   if (!name || !contactNo || !emailId || !userFeedback || !packageId) {
+// //     return res.status(400).json({ success: false, message: "Missing required fields" });
+// //   }
+
+// //   try {
+// //     // Create WhatsApp message link
+// //     const adminWhatsAppNumber = "919964060505"; // Replace with your number with country code
+// //     const message = `
+// // New Inquiry:
+// // Name: ${name}
+// // Email: ${emailId}
+// // Phone: ${contactNo}
+// // Package ID: ${packageId}
+// // Message: ${userFeedback}
+// // `;
+
+// //     // URL encode the message
+// //     const whatsappUrl = `https://wa.me/${adminWhatsAppNumber}?text=${encodeURIComponent(message)}`;
+
+// //     console.log(`📩 Feedback received from ${name}, open WhatsApp link: ${whatsappUrl}`);
+
+// //     res.json({
+// //       success: true,
+// //       message: "Feedback ready to send via WhatsApp",
+// //       whatsappUrl
+// //     });
+
+// //   } catch (error) {
+// //     console.error("❌ WhatsApp message preparation failed:", error);
+// //     res.status(500).json({ success: false, message: "Error preparing WhatsApp message" });
+// //   }
+// // });
+
+// const PORT = process.env.PORT || 5000;
+// app.listen(PORT, "0.0.0.0", () =>
+//   console.log(`✅ Server running on port ${PORT}`)
+// );
