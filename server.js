@@ -575,7 +575,7 @@
 
 const express = require("express");
 const sql = require("mssql");
-
+const moment = require("moment-timezone");
  const cors = require("cors");
 const axios = require("axios");
 
@@ -593,36 +593,41 @@ const PORT = process.env.PORT || 5000;
 
 
 
-// ✅ Update this with your correct DB details
-// const config = {
-//   user: "sqladmin", // RDS master username
-//   password: "Sanchar6t1", // RDS master password
-//   server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com", // your RDS endpoint
+
+// const dbConfig = {
+//   user: "sqladmin",
+//   password: "Sanchar6t1",
+//   server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com",
 //   port: 1433,
-//   database: "Sanchar6T_Dev", // ✅ your actual DB name
+//   database: "Sanchar6T_Dev",
 //   options: {
 //     encrypt: true,
 //     trustServerCertificate: true,
 //   },
+//   pool: {
+//     max: 10,
+//     min: 0,
+//     idleTimeoutMillis: 30000,
+//   },
 // };
 
+
 const dbConfig = {
-  user: "sqladmin",
-  password: "Sanchar6t1",
-  server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com",
-  port: 1433,
-  database: "Sanchar6T_Dev",
+  user: process.env.DB_USER,       
+  password: process.env.DB_PASSWORD,
+  server: process.env.DB_SERVER,   
+  port: parseInt(process.env.DB_PORT),  // <-- use port from .env
+  database: process.env.DB_NAME,
   options: {
-    encrypt: true,
-    trustServerCertificate: true,
+    encrypt: false,                // false for local dev
+    trustServerCertificate: true
   },
   pool: {
     max: 10,
     min: 0,
-    idleTimeoutMillis: 30000,
-  },
+    idleTimeoutMillis: 30000
+  }
 };
-
 
 
 
@@ -859,10 +864,90 @@ app.post("/api/bus-booking-details", async (req, res) => {
   }
 });
 
-// Get all buses with amenities
+
+
+
+app.get("/api/bus-details", async (req, res) => {
+  try {
+    let pool = await sql.connect(dbConfig);
+
+    const result = await pool.request().query(`
+      SELECT 
+    b.[BusBooKingDetailID],
+    b.[OperatorID],
+    b.[PackageID],
+    b.[WkEndSeatPrice],
+    b.[WkDaySeatPrice],
+    b.[DepartureTime],
+    b.[Arrivaltime],
+    b.[Status],
+    b.[PackageName],
+    b.[BusNo],
+    b.[BusSeats],
+    b.[BusType],
+    b.[FemaleSeatNo],
+    a.[AMName]
+FROM [dbo].[vw_BusBookingDetails] b
+LEFT JOIN [dbo].[vw_BusAmenities] a
+  ON b.OperatorID = a.BusOperatorID
+LEFT JOIN [dbo].[vw_BusOperator] o
+  ON b.OperatorID = o.BusOperatorID
+WHERE o.[SourceSystem] = 'TirupatiPackage';
+
+    `);
+
+    // Now group amenities for each bus
+    const buses = {};
+    result.recordset.forEach(row => {
+      if (!buses[row.BusBooKingDetailID]) {
+        buses[row.BusBooKingDetailID] = {
+          BusBooKingDetailID: row.BusBooKingDetailID,
+          OperatorID: row.OperatorID,
+          PackageID: row.PackageID,
+          WkEndSeatPrice: row.WkEndSeatPrice,
+          WkDaySeatPrice: row.WkDaySeatPrice,
+          DepartureTime: row.DepartureTime,
+          Arrivaltime: row.Arrivaltime,
+          Status: row.Status,
+          PackageName: row.PackageName,
+          BusNo: row.BusNo,
+          BusSeats: row.BusSeats,
+          BusType: row.BusType,
+          FemaleSeatNo: row.FemaleSeatNo,
+          amenities: []
+        };
+      }
+      if (row.AMName) {
+        buses[row.BusBooKingDetailID].amenities.push(row.AMName);
+      }
+    });
+
+    const finalData = Object.values(buses);
+    console.log("Bus Details with amenities:", finalData);
+    res.json(finalData);
+
+  } catch (err) {
+    console.error("Error fetching bus details:", err);
+    res.status(500).json({ error: "Server error fetching bus details" });
+  }
+});
+
+
+/////////////////////////////////////////
+
+
+// ------------------- below are apis for seat blocking after payment is sucessful -------------------
+
+/// =======================
+// Reduce Bus Seats API
+// =======================
+/// ------------------- BUS SEAT MANAGEMENT APIS -------------------
+
+/// ✅ Reduce available seats after payment success
 app.get("/api/bus-details", async (req, res) => {
   try {
     const pool = await sql.connect(dbConfig);
+
     const result = await pool.request().query(`
       SELECT 
         b.[BusBooKingDetailID],
@@ -882,74 +967,66 @@ app.get("/api/bus-details", async (req, res) => {
       FROM [dbo].[vw_BusBookingDetails] b
       LEFT JOIN [dbo].[vw_BusAmenities] a
         ON b.OperatorID = a.BusOperatorID
+      LEFT JOIN [dbo].[vw_BusOperator] o
+        ON b.OperatorID = o.BusOperatorID
+      WHERE o.[SourceSystem] = 'TirupatiPackage';
     `);
 
+    // 🧠 Group amenities by BusBookingDetailID
     const buses = {};
-    result.recordset.forEach(row => {
+    result.recordset.forEach((row) => {
       if (!buses[row.BusBooKingDetailID]) {
-        buses[row.BusBooKingDetailID] = { ...row, amenities: [] };
+        buses[row.BusBooKingDetailID] = {
+          BusBooKingDetailID: row.BusBooKingDetailID,
+          OperatorID: row.OperatorID,
+          PackageID: row.PackageID,
+          WkEndSeatPrice: row.WkEndSeatPrice,
+          WkDaySeatPrice: row.WkDaySeatPrice,
+          DepartureTime: row.DepartureTime,
+          Arrivaltime: row.Arrivaltime,
+          Status: row.Status,
+          PackageName: row.PackageName,
+          BusNo: row.BusNo,
+          BusSeats: row.BusSeats,
+          BusType: row.BusType,
+          FemaleSeatNo: row.FemaleSeatNo,
+          amenities: [],
+        };
       }
-      if (row.AMName) buses[row.BusBooKingDetailID].amenities.push(row.AMName);
+      if (row.AMName) {
+        buses[row.BusBooKingDetailID].amenities.push(row.AMName);
+      }
     });
 
-    res.json(Object.values(buses));
+    // 🕒 Convert UTC → IST + format
+    const finalData = Object.values(buses).map((bus) => {
+      const depIST = moment.utc(bus.DepartureTime).tz("Asia/Kolkata");
+      const arrIST = moment.utc(bus.Arrivaltime).tz("Asia/Kolkata");
+
+      // 🕑 AM/PM format
+      const formattedDeparture = depIST.format("hh:mm A");
+      const formattedArrival = arrIST.format("hh:mm A");
+
+      // ⏱ Duration
+      const durationMs = arrIST.diff(depIST);
+      const totalMinutes = Math.floor(durationMs / 60000);
+      const totalHours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      const duration = `${totalHours} Hrs ${minutes} Mins`;
+
+      return {
+        ...bus,
+        DepartureTime: formattedDeparture,
+        Arrivaltime: formattedArrival,
+        Duration: duration,
+      };
+    });
+
+    console.log("✅ Final IST Bus Data:", finalData);
+    res.json(finalData);
   } catch (err) {
-    console.error("SQL error:", err);
-    res.status(500).json({ error: "Failed to fetch bus details" });
-  }
-});
-
-/////////////////////////////////////////
-
-
-// ------------------- below are apis for seat blocking after payment is sucessful -------------------
-
-/// =======================
-// Reduce Bus Seats API
-// =======================
-/// ------------------- BUS SEAT MANAGEMENT APIS -------------------
-
-/// ✅ Reduce available seats after payment success
-app.post("/api/bus/reduceSeat", async (req, res) => {
-  try {
-    const { BusOperatorID, BookedSeats } = req.body;
-
-    if (!BusOperatorID || !BookedSeats) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    const pool = await sql.connect(dbConfig);
-
-    // 1️⃣ Fetch current seats
-    const current = await pool.request()
-      .input("BusOperatorID", sql.Int, BusOperatorID)
-      .query(`SELECT BusSeats FROM BusOperator WHERE BusOperatorID = @BusOperatorID`);
-
-    if (current.recordset.length === 0) {
-      return res.status(404).json({ message: "Bus not found" });
-    }
-
-    const currentSeats = current.recordset[0].BusSeats;
-    const remainingSeats = Math.max(currentSeats - BookedSeats, 0);
-
-    // 2️⃣ Update seat count
-    await pool.request()
-      .input("BusOperatorID", sql.Int, BusOperatorID)
-      .input("BusSeats", sql.Int, remainingSeats)
-      .query(`
-        UPDATE BusOperator
-        SET BusSeats = @BusSeats
-        WHERE BusOperatorID = @BusOperatorID
-      `);
-
-    res.status(200).json({
-      success: true,
-      message: `✅ Reduced ${BookedSeats} seat(s) successfully.`,
-      remainingSeats,
-    });
-  } catch (error) {
-    console.error("❌ Error reducing seats:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("❌ Error fetching bus details:", err);
+    res.status(500).json({ error: "Server error fetching bus details" });
   }
 });
 
@@ -1096,7 +1173,7 @@ app.post("/api/bus/syncSeats", async (req, res) => {
 
 // Book a seat
 app.post("/api/bus-booking-seat", async (req, res) => {
-  try {
+   try {
     const payload = req.body;
     const pool = await sql.connect(dbConfig);
     const proc = "dbo.sp_BusBookingSeat";
@@ -1235,11 +1312,172 @@ app.get("/api/busBoardingCounts", async (req, res) => {
   }
 });
 
+/////// phone pe payment ///////////
+
+// --- PhonePe Sandbox Test Credentials ---
+const MERCHANT_ID = "TEST-M222NJL8ZHVEM_25041";
+const CLIENT_SECRET = "NjIxZTdiZGYtMzlkOS00ZTkyLWFhNjItZTZhNTBjNTgyM2I0";
+const CLIENT_VERSION = "1";
+const SANDBOX_BASE_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
+
+// --- Helper: Get OAuth Token ---
+async function getOAuthToken() {
+  try {
+    const formData = new URLSearchParams({
+      client_id: MERCHANT_ID,
+      client_secret: CLIENT_SECRET,
+      client_version: CLIENT_VERSION,
+      grant_type: "client_credentials",
+    });
+
+    const response = await axios.post(
+      `${SANDBOX_BASE_URL}/v1/oauth/token`,
+      formData.toString(),
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+    );
+
+    return response.data.access_token;
+  } catch (err) {
+    console.error("Error getting OAuth token:", err.response?.data || err.message);
+    return null;
+  }
+}
+
+// --- Create Payment Order ---
+app.post("/api/payment/create-order", async (req, res) => {
+  try {
+    const { merchantOrderId, amount } = req.body;
+    if (!merchantOrderId || !amount) {
+      return res.status(400).json({ error: "merchantOrderId and amount are required" });
+    }
+
+    const token = await getOAuthToken();
+    if (!token) return res.status(500).json({ error: "Failed to get OAuth token" });
+
+    const requestBody = {
+      merchantOrderId,
+      amount: parseInt(amount), // amount in paise
+      expireAfter: 1200,
+      metaInfo: {},
+      paymentFlow: {
+        type: "PG_CHECKOUT",
+        message: "Payment for testing",
+        // merchantUrls: { redirectUrl: `http://localhost:5000/api/payment/callback` },
+        merchantUrls: { 
+      redirectUrl: `http://localhost:8080/payment-result?orderId=${merchantOrderId}` 
+    },
+        paymentModeConfig: {
+          enabledPaymentModes: [],
+          disabledPaymentModes: [],
+        },
+      },
+    };
+
+    const response = await axios.post(
+      `${SANDBOX_BASE_URL}/checkout/v2/pay`,
+      requestBody,
+      { headers: { Authorization: `O-Bearer ${token}`, "Content-Type": "application/json" } }
+    );
+
+    res.json({ orderId: merchantOrderId, phonepeResponse: response.data });
+  } catch (err) {
+    console.error("Error creating order:", err.response?.data || err.message);
+    res.status(500).json({ error: err.response?.data || err.message });
+  }
+});
+
+// --- Callback Endpoint ---
+
+app.post("/api/payment/callback", async (req, res) => {
+  console.log("PhonePe Callback received:", req.body);
+
+
+ res.sendStatus(200); 
+});
+
+
+//////////////// phone pe payment ///////
+////////////////////////////////////
+
+// ----------------------------
+
+app.get("/api/bus/boardingPoints/:busId", async (req, res) => {
+  const { busId } = req.params;
+  console.log("🔍 Fetching boarding points for busId =", busId);
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("busId", sql.Int, parseInt(busId))
+      .query(`
+        SELECT 
+          PointType,
+          BusBooKingDetailID,
+          PointName,
+          AreaName,
+          Pincode,
+          latitude,
+          longitude,
+          CONVERT(varchar, [Time], 108) AS [Time]
+        FROM vw_BusBoardingAndDroppingPoints
+        WHERE BusBooKingDetailID = @busId
+          AND LTRIM(RTRIM(PointType)) = 'B'
+        ORDER BY Time ASC
+      `);
+    res.json({
+      success: true,
+      count: result.recordset.length,
+      boardingPoints: result.recordset,
+    });
+  } catch (err) {
+    console.error("❌ Error fetching boarding points:", err);
+    res.status(500).json({ success: false, message: "Error fetching boarding points" });
+  }
+});
+
+app.get("/api/bus/droppingPoints/:busId", async (req, res) => {
+  const { busId } = req.params;
+  console.log("🔍 Fetching dropping points for busId =", busId);
+  try {
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("busId", sql.Int, parseInt(busId))
+      .query(`
+        SELECT 
+          PointType,
+          BusBooKingDetailID,
+          PointName,
+          AreaName,
+          Pincode,
+          latitude,
+          longitude,
+          CONVERT(varchar, [Time], 108) AS [Time]
+        FROM vw_BusBoardingAndDroppingPoints
+        WHERE BusBooKingDetailID = @busId
+          AND LTRIM(RTRIM(PointType)) = 'D'
+        ORDER BY Time ASC
+      `);
+    res.json({
+      success: true,
+      count: result.recordset.length,
+      droppingPoints: result.recordset,
+    });
+  } catch (err) {
+    console.error("❌ Error fetching dropping points:", err);
+    res.status(500).json({ success: false, message: "Error fetching dropping points" });
+  }
+});
+
+
+
+
+/////////////////////////////////////////
 
 // ✅ Start the server
 app.listen(PORT,"0.0.0.0", () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
+
 
 /////////////////////////////////////////////////////////////////////
 
