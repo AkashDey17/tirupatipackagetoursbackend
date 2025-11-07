@@ -55,7 +55,7 @@ app.post("/api/payment/create-order", async (req, res) => {
       paymentFlow: {
         type: "PG_CHECKOUT",
         message: "Payment for testing",
-        // merchantUrls: { redirectUrl: `http://localhost:5000/api/payment/callback` },
+        // merchantUrls: { redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback` },
         merchantUrls: { 
       redirectUrl: `http://localhost:8080/payment-result?orderId=${merchantOrderId}` 
     },

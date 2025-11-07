@@ -594,40 +594,40 @@ const PORT = process.env.PORT || 5000;
 
 
 
-// const dbConfig = {
-//   user: "sqladmin",
-//   password: "Sanchar6t1",
-//   server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com",
-//   port: 1433,
-//   database: "Sanchar6T_Dev",
-//   options: {
-//     encrypt: true,
-//     trustServerCertificate: true,
-//   },
-//   pool: {
-//     max: 10,
-//     min: 0,
-//     idleTimeoutMillis: 30000,
-//   },
-// };
-
-
 const dbConfig = {
-  user: process.env.DB_USER,       
-  password: process.env.DB_PASSWORD,
-  server: process.env.DB_SERVER,   
-  port: parseInt(process.env.DB_PORT),  // <-- use port from .env
-  database: process.env.DB_NAME,
+  user: "sqladmin",
+  password: "Sanchar6t1",
+  server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com",
+  port: 1433,
+  database: "Sanchar6T_Dev",
   options: {
-    encrypt: false,                // false for local dev
-    trustServerCertificate: true
+    encrypt: true,
+    trustServerCertificate: true,
   },
   pool: {
     max: 10,
     min: 0,
-    idleTimeoutMillis: 30000
-  }
+    idleTimeoutMillis: 30000,
+  },
 };
+
+
+// const dbConfig = {
+//   user: process.env.DB_USER,       
+//   password: process.env.DB_PASSWORD,
+//   server: process.env.DB_SERVER,   
+//   port: parseInt(process.env.DB_PORT),  // <-- use port from .env
+//   database: process.env.DB_NAME,
+//   options: {
+//     encrypt: false,                // false for local dev
+//     trustServerCertificate: true
+//   },
+//   pool: {
+//     max: 10,
+//     min: 0,
+//     idleTimeoutMillis: 30000
+//   }
+// };
 
 
 
@@ -867,36 +867,122 @@ app.post("/api/bus-booking-details", async (req, res) => {
 
 
 
+
+
+
+
+// app.get("/api/bus-details", async (req, res) => {
+//   try {
+//     const { packageId } = req.query; // ✅ Read packageId
+//     let pool = await sql.connect(dbConfig);
+    
+//     let request = pool.request();
+
+//     // ✅ Base Query
+//     let query = `
+//       SELECT 
+//         b.[BusBooKingDetailID],
+//         b.[OperatorID],
+//         b.[PackageID],
+//         b.[WkEndSeatPrice],
+//         b.[WkDaySeatPrice],
+//         b.[DepartureTime],
+//         b.[Arrivaltime],
+//         b.[Status],
+//         b.[PackageName],
+//         b.[BusNo],
+//         b.[BusSeats],
+//         b.[BusType],
+//         b.[FemaleSeatNo],
+//         a.[AMName]
+//       FROM [dbo].[vw_BusBookingDetails] b
+//       LEFT JOIN [dbo].[vw_BusAmenities] a ON b.OperatorID = a.BusOperatorID
+//       LEFT JOIN [dbo].[vw_BusOperator] o ON b.OperatorID = o.BusOperatorID
+//       WHERE o.[SourceSystem] = 'TirupatiPackage'
+//     `;
+
+//     // ✅ Filter if packageId received
+//     if (packageId) {
+//       query += " AND b.[PackageID] = @packageId";
+//       request.input("packageId", sql.Int, packageId);
+//     }
+
+//     const result = await request.query(query);
+
+//     const buses = {};
+//     result.recordset.forEach(row => {
+//       if (!buses[row.BusBooKingDetailID]) {
+//         buses[row.BusBooKingDetailID] = {
+//           BusBooKingDetailID: row.BusBooKingDetailID,
+//           OperatorID: row.OperatorID,
+//           PackageID: row.PackageID,
+//           WkEndSeatPrice: row.WkEndSeatPrice,
+//           WkDaySeatPrice: row.WkDaySeatPrice,
+//           DepartureTime: row.DepartureTime,
+//           Arrivaltime: row.Arrivaltime,
+//           Status: row.Status,
+//           PackageName: row.PackageName,
+//           BusNo: row.BusNo,
+//           BusSeats: row.BusSeats,
+//           BusType: row.BusType,
+//           FemaleSeatNo: row.FemaleSeatNo,
+//           amenities: []
+//         };
+//       }
+//       if (row.AMName) buses[row.BusBooKingDetailID].amenities.push(row.AMName);
+//     });
+
+//     res.json(Object.values(buses));
+//   } catch (err) {
+//     console.error("Error fetching bus details:", err);
+//     res.status(500).json({ error: "Server error fetching bus details" });
+//   }
+// });
+
+
+///////////////////////////////////////////////////
+
 app.get("/api/bus-details", async (req, res) => {
   try {
+    const { packageId } = req.query;
     let pool = await sql.connect(dbConfig);
+    let request = pool.request();
 
-    const result = await pool.request().query(`
+    // Base query
+    let query = `
       SELECT 
-    b.[BusBooKingDetailID],
-    b.[OperatorID],
-    b.[PackageID],
-    b.[WkEndSeatPrice],
-    b.[WkDaySeatPrice],
-    b.[DepartureTime],
-    b.[Arrivaltime],
-    b.[Status],
-    b.[PackageName],
-    b.[BusNo],
-    b.[BusSeats],
-    b.[BusType],
-    b.[FemaleSeatNo],
-    a.[AMName]
-FROM [dbo].[vw_BusBookingDetails] b
-LEFT JOIN [dbo].[vw_BusAmenities] a
-  ON b.OperatorID = a.BusOperatorID
-LEFT JOIN [dbo].[vw_BusOperator] o
-  ON b.OperatorID = o.BusOperatorID
-WHERE o.[SourceSystem] = 'TirupatiPackage';
+        b.[BusBooKingDetailID],
+        b.[OperatorID],
+        b.[PackageID],
+        b.[WkEndSeatPrice],
+        b.[WkDaySeatPrice],
+        b.[DepartureTime],
+        b.[Arrivaltime],
+        b.[Status],
+        b.[PackageName],
+        b.[BusNo],
+        b.[BusSeats],
+        b.[BusType],
+        b.[FemaleSeatNo],
+        a.[AMName]
+      FROM [dbo].[vw_BusBookingDetails] b
+      LEFT JOIN [dbo].[vw_BusAmenities] a ON b.OperatorID = a.BusOperatorID
+      LEFT JOIN [dbo].[vw_BusOperator] o ON b.OperatorID = o.BusOperatorID
+      WHERE o.[SourceSystem] = 'TirupatiPackage'
+    `;
 
-    `);
+    // Optional filter
+    if (packageId) {
+      query += " AND b.[PackageID] = @packageId";
+      request.input("packageId", sql.Int, packageId);
+    }
 
-    // Now group amenities for each bus
+    // Add ordering
+    query += " ORDER BY b.DepartureTime";
+    console.log("Executing query:", query);
+
+    const result = await request.query(query);
+
     const buses = {};
     result.recordset.forEach(row => {
       if (!buses[row.BusBooKingDetailID]) {
@@ -917,119 +1003,85 @@ WHERE o.[SourceSystem] = 'TirupatiPackage';
           amenities: []
         };
       }
-      if (row.AMName) {
-        buses[row.BusBooKingDetailID].amenities.push(row.AMName);
-      }
+      if (row.AMName) buses[row.BusBooKingDetailID].amenities.push(row.AMName);
     });
 
-    const finalData = Object.values(buses);
-    console.log("Bus Details with amenities:", finalData);
-    res.json(finalData);
+    // ✅ Maintain order by DepartureTime
+    const busArray = Object.values(buses).sort(
+      (a, b) => new Date(a.DepartureTime) - new Date(b.DepartureTime)
+    );
 
+    res.json(busArray);
   } catch (err) {
     console.error("Error fetching bus details:", err);
     res.status(500).json({ error: "Server error fetching bus details" });
   }
 });
 
+app.get("/bus-booking-details/by-operator-package/:operatorId/:packageId", async (req, res) => {
+  const { operatorId, packageId } = req.params;
 
-/////////////////////////////////////////
-
-
-// ------------------- below are apis for seat blocking after payment is sucessful -------------------
-
-/// =======================
-// Reduce Bus Seats API
-// =======================
-/// ------------------- BUS SEAT MANAGEMENT APIS -------------------
-
-/// ✅ Reduce available seats after payment success
-app.get("/api/bus-details", async (req, res) => {
   try {
     const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input("operatorId", sql.Int, operatorId)
+      .input("packageId", sql.Int, packageId)
+      .query(`
+        SELECT TOP 1 BusBooKingDetailID 
+        FROM BusBookingDetails
+        WHERE OperatorID = @operatorId AND PackageID = @packageId
+        ORDER BY CreatedDt DESC
+      `);
 
-    const result = await pool.request().query(`
-      SELECT 
-        b.[BusBooKingDetailID],
-        b.[OperatorID],
-        b.[PackageID],
-        b.[WkEndSeatPrice],
-        b.[WkDaySeatPrice],
-        b.[DepartureTime],
-        b.[Arrivaltime],
-        b.[Status],
-        b.[PackageName],
-        b.[BusNo],
-        b.[BusSeats],
-        b.[BusType],
-        b.[FemaleSeatNo],
-        a.[AMName]
-      FROM [dbo].[vw_BusBookingDetails] b
-      LEFT JOIN [dbo].[vw_BusAmenities] a
-        ON b.OperatorID = a.BusOperatorID
-      LEFT JOIN [dbo].[vw_BusOperator] o
-        ON b.OperatorID = o.BusOperatorID
-      WHERE o.[SourceSystem] = 'TirupatiPackage';
-    `);
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: "Not found", busBookingDetailId: null });
+    }
 
-    // 🧠 Group amenities by BusBookingDetailID
-    const buses = {};
-    result.recordset.forEach((row) => {
-      if (!buses[row.BusBooKingDetailID]) {
-        buses[row.BusBooKingDetailID] = {
-          BusBooKingDetailID: row.BusBooKingDetailID,
-          OperatorID: row.OperatorID,
-          PackageID: row.PackageID,
-          WkEndSeatPrice: row.WkEndSeatPrice,
-          WkDaySeatPrice: row.WkDaySeatPrice,
-          DepartureTime: row.DepartureTime,
-          Arrivaltime: row.Arrivaltime,
-          Status: row.Status,
-          PackageName: row.PackageName,
-          BusNo: row.BusNo,
-          BusSeats: row.BusSeats,
-          BusType: row.BusType,
-          FemaleSeatNo: row.FemaleSeatNo,
-          amenities: [],
-        };
-      }
-      if (row.AMName) {
-        buses[row.BusBooKingDetailID].amenities.push(row.AMName);
-      }
-    });
-
-    // 🕒 Convert UTC → IST + format
-    const finalData = Object.values(buses).map((bus) => {
-      const depIST = moment.utc(bus.DepartureTime).tz("Asia/Kolkata");
-      const arrIST = moment.utc(bus.Arrivaltime).tz("Asia/Kolkata");
-
-      // 🕑 AM/PM format
-      const formattedDeparture = depIST.format("hh:mm A");
-      const formattedArrival = arrIST.format("hh:mm A");
-
-      // ⏱ Duration
-      const durationMs = arrIST.diff(depIST);
-      const totalMinutes = Math.floor(durationMs / 60000);
-      const totalHours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
-      const duration = `${totalHours} Hrs ${minutes} Mins`;
-
-      return {
-        ...bus,
-        DepartureTime: formattedDeparture,
-        Arrivaltime: formattedArrival,
-        Duration: duration,
-      };
-    });
-
-    console.log("✅ Final IST Bus Data:", finalData);
-    res.json(finalData);
+    res.json({ busBookingDetailId: result.recordset[0].BusBooKingDetailID });
   } catch (err) {
-    console.error("❌ Error fetching bus details:", err);
-    res.status(500).json({ error: "Server error fetching bus details" });
+    console.error("Error fetching BusBookingDetailID", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
+
+
+////////////////////// ✅ MEMORY SEAT LOCK STORAGE //////////////////////////
+const seatLocks = new Map(); // busId-seat
+const SEAT_LOCK_TIME = 10 * 60 * 1000; // 10 mins timeout
+
+// 🔓 Auto clear expired locks every 1 minute
+setInterval(() => {
+  seatLocks.forEach((value, key) => {
+    if (Date.now() - value.time > SEAT_LOCK_TIME) {
+      seatLocks.delete(key);
+    }
+  });
+}, 60000);
+
+////////////////////// ✅ LOCK SEAT //////////////////////////
+app.post("/api/seat/lock", (req, res) => {
+  const { busId, seatNo, sessionId } = req.body;
+  const key = `${busId}-${seatNo}`;
+
+  const existing = seatLocks.get(key);
+  if (existing && Date.now() - existing.time < SEAT_LOCK_TIME) {
+    return res.json({ success: false, message: "Seat already locked" });
+  }
+
+  seatLocks.set(key, { sessionId, time: Date.now() });
+  return res.json({ success: true, message: "Seat locked" });
+});
+
+////////////////////// ✅ CONFIRM SEAT (after DB entry) //////////////////////////
+app.post("/api/seat/confirm", (req, res) => {
+  const { busId, seatNo } = req.body;
+  const key = `${busId}-${seatNo}`;
+  seatLocks.delete(key);
+  return res.json({ success: true, message: "Seat confirmed" });
+});
+
+//////////////////////////////////////////////////
 
 // ✅ Get remaining seats for a bus
 app.get("/api/bus/bookedSeats", async (req, res) => {
@@ -1060,62 +1112,388 @@ app.get("/api/bus/bookedSeats", async (req, res) => {
 
 
 // ✅ Get seat layout + remaining seats + price dynamically
+
+// app.get("/api/bus/seatLayout", async (req, res) => {
+//   try {
+//     const { busId } = req.query;
+//     if (!busId) {
+//       return res.status(400).json({ success: false, message: "Bus ID is required" });
+//     }
+
+//     const pool = await sql.connect(dbConfig);
+//     const result = await pool.request()
+//       .input("BusId", sql.Int, busId)
+//       .query(`
+//          SELECT 
+//       bbd.WkDaySeatPrice AS weekday,
+//       bbd.WkEndSeatPrice AS weekend,
+
+//       (SELECT COUNT(*) 
+//          FROM BusBookingSeat bbs 
+//          WHERE bbs.BusBookingDetailsID = @BusId 
+//            AND bbs.Status = 'Booked') AS bookedCount,
+
+//       (bo.BusSeats 
+//        - (
+//            SELECT COUNT(*) 
+//            FROM BusBookingSeat bbs 
+//            WHERE bbs.BusBookingDetailsID = @BusId 
+//              AND bbs.Status = 'Booked'
+//          )
+//        - (
+//            SELECT COUNT(*) 
+//            FROM SeatLock sl 
+//            WHERE sl.BusBookingDetailsID = @BusId 
+//              AND sl.ExpiresAt > GETUTCDATE()
+//          )
+//       ) AS remainingSeats,
+
+//       (SELECT STRING_AGG(SeatNo, ',') 
+//          FROM BusBookingSeat bbs 
+//          WHERE bbs.BusBookingDetailsID = @BusId 
+//            AND bbs.Status = 'Booked') AS bookedSeats,
+
+//       (SELECT STRING_AGG(SeatNo, ',') 
+//          FROM SeatLock sl 
+//          WHERE sl.BusBookingDetailsID = @BusId 
+//            AND sl.ExpiresAt > GETUTCDATE()) AS lockedSeats,
+
+//       bo.FemaleSeatNo
+//     FROM BusOperator bo
+//     JOIN BusBookingDetails bbd ON bo.BusOperatorID = bbd.OperatorID
+//     WHERE bbd.BusBookingDetailID = @BusId;
+//       `);
+
+//     const data = result.recordset[0] || {};
+
+//     // Parse booked/locked seats as arrays
+//     const bookedSeats = data.bookedSeats
+//       ? data.bookedSeats.split(",").map((s) => s.trim())
+//       : [];
+
+//     const lockedSeats = data.lockedSeats
+//       ? data.lockedSeats.split(",").map((s) => s.trim())
+//       : [];
+
+//     res.json({
+//       success: true,
+//       price: {
+//         weekday: data.weekday,
+//         weekend: data.weekend,
+//         default: data.price,
+//       },
+//       bookedSeats,
+//       lockedSeats,
+//       remainingSeats: data.remainingSeats,
+//       femaleSeatNo: data.FemaleSeatNo,
+//     });
+//   } catch (error) {
+//     console.error("❌ Error in /api/bus/seatLayout:", error);
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// });
+
+// app.get("/api/bus/seatLayout", async (req, res) => {
+//   try {
+//     const { busId, journeyDate } = req.query;
+
+//     if (!busId || !journeyDate) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Bus ID and Journey Date are required.",
+//       });
+//     }
+
+//     const pool = await sql.connect(dbConfig);
+//     const result = await pool.request()
+//       .input("BusId", sql.Int, busId)
+//       .input("JourneyDate", sql.Date, journeyDate)
+//       .query(`
+//         SELECT 
+//           bbd.WkDaySeatPrice AS weekday,
+//           bbd.WkEndSeatPrice AS weekend,
+
+//           (SELECT COUNT(*) 
+//              FROM BusBookingSeat bbs 
+//              WHERE bbs.BusBookingDetailsID = @BusId 
+//                AND CONVERT(date, bbs.JourneyDate) = CONVERT(date, @JourneyDate)
+//                AND bbs.Status = 'Booked') AS bookedCount,
+
+//           (bo.BusSeats 
+//            - (
+//                SELECT COUNT(*) 
+//                FROM BusBookingSeat bbs 
+//                WHERE bbs.BusBookingDetailsID = @BusId 
+//                  AND CONVERT(date, bbs.JourneyDate) = CONVERT(date, @JourneyDate)
+//                  AND bbs.Status = 'Booked'
+//              )
+//            - (
+//                SELECT COUNT(*) 
+//                FROM SeatLock sl 
+//                WHERE sl.BusBookingDetailsID = @BusId 
+//                  AND CONVERT(date, sl.JourneyDate) = CONVERT(date, @JourneyDate)
+//                  AND sl.ExpiresAt > GETUTCDATE()
+//              )
+//           ) AS remainingSeats,
+
+//           (SELECT STRING_AGG(SeatNo, ',') 
+//              FROM BusBookingSeat bbs 
+//              WHERE bbs.BusBookingDetailsID = @BusId 
+//                AND CONVERT(date, bbs.JourneyDate) = CONVERT(date, @JourneyDate)
+//                AND bbs.Status = 'Booked') AS bookedSeats,
+
+//           (SELECT STRING_AGG(SeatNo, ',') 
+//              FROM SeatLock sl 
+//              WHERE sl.BusBookingDetailsID = @BusId 
+//                AND CONVERT(date, sl.JourneyDate) = CONVERT(date, @JourneyDate)
+//                AND sl.ExpiresAt > GETUTCDATE()) AS lockedSeats,
+
+//           bo.FemaleSeatNo
+//         FROM BusOperator bo
+//         JOIN BusBookingDetails bbd ON bo.BusOperatorID = bbd.OperatorID
+//         WHERE bbd.BusBookingDetailID = @BusId;
+//       `);
+
+//     const data = result.recordset[0] || {};
+//     const bookedSeats = data.bookedSeats
+//       ? data.bookedSeats.split(",").map(s => s.trim())
+//       : [];
+//     const lockedSeats = data.lockedSeats
+//       ? data.lockedSeats.split(",").map(s => s.trim())
+//       : [];
+
+//     res.json({
+//       success: true,
+//       price: { weekday: data.weekday, weekend: data.weekend },
+//       bookedSeats,
+//       lockedSeats,
+//       remainingSeats: data.remainingSeats ?? 0,
+//       femaleSeatNo: data.FemaleSeatNo,
+//     });
+//   } catch (error) {
+//     console.error("❌ Error in /api/bus/seatLayout:", error);
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// });
+
+// app.get("/api/bus/seatLayout", async (req, res) => {
+//   try {
+//     const { busId, journeyDate } = req.query;
+
+//     if (!busId) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Bus ID is required" });
+//     }
+
+//     const pool = await sql.connect(dbConfig);
+
+//     // ✅ Step 1: Auto-unblock past-dated bookings
+//     await pool.request().query(`
+//       UPDATE BusBookingSeat
+//       SET LockStatus = 'Unblocked',
+//           Status = CASE WHEN PaymentStatus = 'Pending' THEN 'Cancelled' ELSE Status END
+//       WHERE JourneyDate < CAST(GETDATE() AS DATE)
+//         AND LockStatus != 'Unblocked';
+//     `);
+
+//     // ✅ Step 2: Fetch seat layout for the selected bus & journey date
+//     const result = await pool
+//       .request()
+//       .input("BusId", sql.Int, busId)
+//       .input("JourneyDate", sql.Date, journeyDate || new Date())
+//       .query(`
+//         SELECT 
+//           bbd.WkDaySeatPrice AS weekday,
+//           bbd.WkEndSeatPrice AS weekend,
+
+//           -- ✅ Total booked seats for this bus on this specific date
+//           (SELECT COUNT(*) 
+//            FROM BusBookingSeat bbs 
+//            WHERE bbs.BusBookingDetailsID = @BusId 
+//              AND bbs.Status = 'Booked'
+//              AND CAST(bbs.JourneyDate AS DATE) = @JourneyDate
+//           ) AS bookedCount,
+
+//           -- ✅ Remaining seats considering bookings and valid locks
+//           (bo.BusSeats 
+//            - (
+//                SELECT COUNT(*) 
+//                FROM BusBookingSeat bbs 
+//                WHERE bbs.BusBookingDetailsID = @BusId 
+//                  AND bbs.Status = 'Booked'
+//                  AND CAST(bbs.JourneyDate AS DATE) = @JourneyDate
+//              )
+//            - (
+//                SELECT COUNT(*) 
+//                FROM SeatLock sl 
+//                WHERE sl.BusBookingDetailsID = @BusId 
+//                  AND CAST(sl.JourneyDate AS DATE) = @JourneyDate
+//                  AND sl.ExpiresAt > GETUTCDATE()
+//              )
+//           ) AS remainingSeats,
+
+//           -- ✅ Seats booked for this date
+//           (SELECT STRING_AGG(SeatNo, ',') 
+//            FROM BusBookingSeat bbs 
+//            WHERE bbs.BusBookingDetailsID = @BusId 
+//              AND bbs.Status = 'Booked'
+//              AND CAST(bbs.JourneyDate AS DATE) = @JourneyDate
+//           ) AS bookedSeats,
+
+//           -- ✅ Seats locked for this date
+//           (SELECT STRING_AGG(SeatNo, ',') 
+//            FROM SeatLock sl 
+//            WHERE sl.BusBookingDetailsID = @BusId 
+//              AND CAST(sl.JourneyDate AS DATE) = @JourneyDate
+//              AND sl.ExpiresAt > GETUTCDATE()
+//           ) AS lockedSeats,
+
+//           -- ✅ Female-only seats
+//           bo.FemaleSeatNo
+//         FROM BusOperator bo
+//         JOIN BusBookingDetails bbd ON bo.BusOperatorID = bbd.OperatorID
+//         WHERE bbd.BusBookingDetailID = @BusId;
+//       `);
+
+//     // ✅ Parse data safely
+//     const data = result.recordset[0] || {};
+
+//     const bookedSeats = data.bookedSeats
+//       ? data.bookedSeats.split(",").map((s) => s.trim())
+//       : [];
+
+//     const lockedSeats = data.lockedSeats
+//       ? data.lockedSeats.split(",").map((s) => s.trim())
+//       : [];
+
+//     // ✅ Send clean response
+//     res.json({
+//       success: true,
+//       price: {
+//         weekday: Number(data.weekday) || 0,
+//         weekend: Number(data.weekend) || 0,
+//       },
+//       bookedSeats,
+//       lockedSeats,
+//       remainingSeats: data.remainingSeats || 0,
+//       femaleSeatNo: data.FemaleSeatNo || null,
+//     });
+//   } catch (error) {
+//     console.error("❌ Error in /api/bus/seatLayout:", error);
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// });
+
 app.get("/api/bus/seatLayout", async (req, res) => {
   try {
-    const { busId } = req.query;
-    if (!busId) return res.status(400).json({ message: "Bus ID is required" });
+    const { busId, journeyDate } = req.query;
+
+    if (!busId || !journeyDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Bus ID and Journey Date are required",
+      });
+    }
 
     const pool = await sql.connect(dbConfig);
 
-    // 1️⃣ Fetch operator info
+    // ✅ Step 1: Auto-unblock past-dated bookings
+    await pool.request().query(`
+      UPDATE BusBookingSeat
+      SET LockStatus = 'Unblocked',
+          Status = CASE WHEN PaymentStatus = 'Pending' THEN 'Cancelled' ELSE Status END
+      WHERE JourneyDate < CAST(GETDATE() AS DATE)
+        AND LockStatus != 'Unblocked';
+    `);
+
+    // ✅ Normalize incoming date to local date (avoid UTC issues)
+    const normalizedDate = new Date(`${journeyDate}T00:00:00`);
+    console.log("🗓️ Normalized JourneyDate:", normalizedDate);
+
+    // ✅ Step 2: Fetch seat layout for the selected bus & date
     const result = await pool.request()
-      .input("BusOperatorID", sql.Int, busId)
+      .input("BusId", sql.Int, busId)
+      .input("JourneyDate", sql.Date, normalizedDate)
       .query(`
         SELECT 
-          b.BusSeats,
-          d.WkEndSeatPrice,
-          d.WkDaySeatPrice,
-          b.BusType
-        FROM BusOperator b
-        LEFT JOIN BusBookingDetails d ON b.BusOperatorID = d.OperatorID
-        WHERE b.BusOperatorID = @BusOperatorID
+  bbd.WkDaySeatPrice AS weekday,
+  bbd.WkEndSeatPrice AS weekend,
+
+  (SELECT COUNT(*) 
+   FROM BusBookingSeat bbs 
+   WHERE bbs.BusBookingDetailsID = @BusId
+     AND bbs.Status = 'Booked'
+     AND CAST(bbs.JourneyDate AS DATE) = CAST(@JourneyDate AS DATE)
+  ) AS bookedCount,
+
+  (bo.BusSeats 
+   - (
+       SELECT COUNT(*) 
+       FROM BusBookingSeat bbs 
+       WHERE bbs.BusBookingDetailsID = @BusId
+         AND bbs.Status = 'Booked'
+         AND CAST(bbs.JourneyDate AS DATE) = CAST(@JourneyDate AS DATE)
+     )
+   - (
+       SELECT COUNT(*) 
+       FROM SeatLock sl 
+       WHERE sl.BusBookingDetailsID = @BusId
+         AND CAST(sl.JourneyDate AS DATE) = CAST(@JourneyDate AS DATE)
+         AND sl.ExpiresAt > GETUTCDATE()
+     )
+  ) AS remainingSeats,
+
+  (SELECT STRING_AGG(SeatNo, ',') 
+   FROM BusBookingSeat bbs 
+   WHERE bbs.BusBookingDetailsID = @BusId
+     AND bbs.Status = 'Booked'
+     AND CAST(bbs.JourneyDate AS DATE) = CAST(@JourneyDate AS DATE)
+  ) AS bookedSeats,
+
+  (SELECT STRING_AGG(SeatNo, ',') 
+   FROM SeatLock sl 
+   WHERE sl.BusBookingDetailsID = @BusId
+     AND CAST(sl.JourneyDate AS DATE) = CAST(@JourneyDate AS DATE)
+     AND sl.ExpiresAt > GETUTCDATE()
+  ) AS lockedSeats,
+
+  bo.FemaleSeatNo
+FROM BusOperator bo
+JOIN BusBookingDetails bbd ON bo.BusOperatorID = bbd.OperatorID
+WHERE bbd.BusBookingDetailID = @BusId;
       `);
 
-    if (result.recordset.length === 0)
-      return res.status(404).json({ message: "Bus not found" });
+    if (!result.recordset.length) {
+      return res.status(404).json({ success: false, message: "Bus not found" });
+    }
 
-    const bus = result.recordset[0];
+    const data = result.recordset[0];
 
-    // 2️⃣ Get all booked seats from BusBookingSeat table
-    const bookedRes = await pool.request()
-      .input("BusOperatorID", sql.Int, busId)
-      .query(`SELECT SeatNo FROM BusBookingSeat WHERE BusOperatorID = @BusOperatorID`);
+    const bookedSeats = data.bookedSeats
+      ? data.bookedSeats.split(",").map((s) => s.trim())
+      : [];
 
-    const bookedSeats = bookedRes.recordset.map(r => r.SeatNo);
+    const lockedSeats = data.lockedSeats
+      ? data.lockedSeats.split(",").map((s) => s.trim())
+      : [];
 
-    // 3️⃣ Generate seat IDs (example L1-L18, U1-U18)
-    const allSeats = [];
-    for (let i = 1; i <= 18; i++) allSeats.push(`L${i}`);
-    for (let i = 1; i <= 18; i++) allSeats.push(`U${i}`);
-
-    const today = new Date();
-    const day = today.getDay(); // 0=Sun, 6=Sat
-    const price = (day === 0 || day === 6)
-      ? bus.WkEndSeatPrice
-      : bus.WkDaySeatPrice;
-
-    res.status(200).json({
+    res.json({
       success: true,
-      busId,
-      seatLayout: allSeats,
+      price: {
+        weekday: Number(data.weekday) || 0,
+        weekend: Number(data.weekend) || 0,
+      },
       bookedSeats,
-      remainingSeats: bus.BusSeats,
-      price,
-      busType: bus.BusType
+      lockedSeats,
+      remainingSeats: data.remainingSeats || 0,
+      femaleSeatNo: data.FemaleSeatNo || null,
     });
+    console.log("🚀 Checking Seat Layout:", { busId, journeyDate });
+
   } catch (error) {
-    console.error("❌ Error fetching seat layout:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("❌ Error in /api/bus/seatLayout:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -1171,57 +1549,465 @@ app.post("/api/bus/syncSeats", async (req, res) => {
 });
 
 
-// Book a seat
+
+
+
+
+
+// app.post("/api/user/get-or-create", async (req, res) => {
+//   try {
+//     const { FirstName, LastName, Email, ContactNo, Gender, SavePassengerDetails } = req.body;
+
+//     console.log("📥 Incoming:", req.body);
+
+//     const pool = await sql.connect(dbConfig);
+
+//     // ✅ Always check existing passenger (even if NO)
+//     const existing = await pool.request()
+//       .input("Email", sql.VarChar, Email)
+//       .input("ContactNo", sql.VarChar, ContactNo)
+//       .query(`
+//         SELECT PassengerDtlID 
+//         FROM SavedPassengerDtls
+//         WHERE ISNULL(Email,'') = ISNULL(@Email,'') 
+//         AND ISNULL(ContactNo,'') = ISNULL(@ContactNo,'')
+//       `);
+
+//     if (existing.recordset.length > 0) {
+//       console.log("✅ Existing passenger found:", existing.recordset[0].PassengerDtlID);
+//       return res.json({ PassengerID: existing.recordset[0].PassengerDtlID });
+//     }
+
+//     // ✅ If not found → create new one
+//     const insertResult = await pool.request()
+//       .input("FirstName", sql.VarChar, FirstName)
+//       .input("LastName", sql.VarChar, LastName)
+//       .input("Email", sql.VarChar, Email)
+//       .input("ContactNo", sql.VarChar, ContactNo)
+//       .input("Gender", sql.VarChar, Gender)
+//       .input("PrimaryUser", sql.Bit, SavePassengerDetails === "Y" ? 1 : 0) 
+//       .query(`
+//         INSERT INTO SavedPassengerDtls 
+//         (FirstName, LastName, Email, ContactNo, Gender, PrimaryUser, CreatedBy, CreatedDt)
+//         OUTPUT INSERTED.PassengerDtlID
+//         VALUES (@FirstName, @LastName, @Email, @ContactNo, @Gender, @PrimaryUser, 0, GETDATE());
+//       `);
+
+//     const newPassengerID = insertResult.recordset[0].PassengerDtlID;
+//     console.log("🆕 New passenger created:", newPassengerID);
+
+//     return res.json({ PassengerID: newPassengerID });
+
+//   } catch (err) {
+//     console.error("❌ Error:", err);
+//     return res.status(500).json({ PassengerID: 0, error: err.message });
+//   }
+// });
+
+
+
+/////////////////////////////////
 app.post("/api/bus-booking-seat", async (req, res) => {
-   try {
+  try {
     const payload = req.body;
     const pool = await sql.connect(dbConfig);
     const proc = "dbo.sp_BusBookingSeat";
+
+    // ✅ Proper SavePassengerDetails flag
     const saveFlag = payload.SavePassengerDetails === "Y" ? "Yes" : "No";
 
-    const request = pool.request();
-    request.input("Flag", sql.Char(1), "I");
-    request.input("BusBookingSeatID", sql.Int, payload.BusBookingSeatID ?? 0);
-    request.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
-    request.input("BusOperatorID", sql.Int, payload.BusOperatorID);
-    request.input("UserID", sql.Int, payload.UserID ?? 0);
-    request.input("ForSelf", sql.Bit, payload.ForSelf ? 1 : 0);
-    request.input("IsPrimary", sql.Int, payload.IsPrimary ?? 1);
-    request.input("SeatNo", sql.NVarChar(50), payload.SeatNo ?? null);
-    request.input("FirstName", sql.VarChar(250), payload.FirstName ?? null);
-    request.input("MiddleName", sql.VarChar(250), payload.MiddleName ?? null);
-    request.input("LastName", sql.VarChar(250), payload.LastName ?? null);
-    request.input("Email", sql.VarChar(150), payload.Email ?? null);
-    request.input("ContactNo", sql.VarChar(50), payload.ContactNo ?? null);
-    request.input("Gender", sql.VarChar(50), payload.Gender ?? null);
-    request.input("AadharNo", sql.VarChar(20), payload.AadharNo ?? null);
-    request.input("PancardNo", sql.VarChar(20), payload.PancardNo ?? null);
-    request.input("BloodGroup", sql.VarChar(10), payload.BloodGroup ?? null);
-    request.input("DOB", sql.DateTime, safeDate(payload.DOB));
-    request.input("FoodPref", sql.VarChar(100), payload.FoodPref ?? null);
-    request.input("Disabled", sql.Bit, payload.Disabled ? 1 : 0);
-    request.input("Pregnant", sql.Bit, payload.Pregnant ? 1 : 0);
-    request.input("RegisteredCompanyNumber", sql.VarChar(50), payload.RegisteredCompanyNumber ?? null);
-    request.input("RegisteredCompanyName", sql.VarChar(50), payload.RegisteredCompanyName ?? null);
-    request.input("DrivingLicence", sql.VarChar(100), payload.DrivingLicence ?? null);
-    request.input("PassportNo", sql.VarChar(100), payload.PassportNo ?? null);
-    request.input("RationCard", sql.VarChar(100), payload.RationCard ?? null);
-    request.input("VoterID", sql.VarChar(100), payload.VoterID ?? null);
-    request.input("Others", sql.VarChar(500), payload.Others ?? null);
-    request.input("NRI", sql.Bit, payload.NRI ? 1 : 0);
-    request.input("CreatedBy", sql.Int, payload.CreatedBy ?? 1);
-    request.input("SavePassengerDetails", sql.VarChar(50), saveFlag);
+    // ✅ Handle single or multiple seats
+    const seats = Array.isArray(payload.SeatNo) ? payload.SeatNo : [payload.SeatNo];
 
-    const result = await request.execute(proc);
-    res.status(201).json({ message: "Booking saved successfully", result: result.recordset });
+    // ✅ Date helper – trusts YYYY-MM-DD, avoids UTC conversion
+    const safeDate = (date) => {
+      if (!date) return null;
+      if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return date; // already normalized by frontend
+      }
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return null;
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    // ✅ Loop through all selected seats
+    for (const seat of seats) {
+      const request = pool.request();
+
+      request.input("Flag", sql.Char(1), "I");
+      request.input("BusBookingSeatID", sql.Int, payload.BusBookingSeatID ?? 0);
+      request.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
+      request.input("BusOperatorID", sql.Int, payload.BusOperatorID);
+      request.input("UserID", sql.Int, payload.UserID === 0 ? null : payload.UserID);
+      request.input("ForSelf", sql.Bit, payload.ForSelf ? 1 : 0);
+      request.input("IsPrimary", sql.Int, payload.IsPrimary ?? 1);
+      request.input("SeatNo", sql.NVarChar(50), seat);
+
+      // 👤 Passenger info
+      request.input("FirstName", sql.VarChar(250), payload.FirstName ?? null);
+      request.input("MiddleName", sql.VarChar(250), payload.MiddleName ?? null);
+      request.input("LastName", sql.VarChar(250), payload.LastName ?? null);
+      request.input("Email", sql.VarChar(150), payload.Email ?? null);
+      request.input("ContactNo", sql.VarChar(50), payload.ContactNo ?? null);
+      request.input("Gender", sql.VarChar(50), payload.Gender ?? null);
+      request.input("AadharNo", sql.VarChar(20), payload.AadharNo ?? null);
+      request.input("PancardNo", sql.VarChar(20), payload.PancardNo ?? null);
+      request.input("BloodGroup", sql.VarChar(10), payload.BloodGroup ?? null);
+      request.input("DOB", sql.Date, safeDate(payload.DOB));
+      request.input("FoodPref", sql.VarChar(100), payload.FoodPref ?? null);
+      request.input("Disabled", sql.Bit, payload.Disabled ? 1 : 0);
+      request.input("Pregnant", sql.Bit, payload.Pregnant ? 1 : 0);
+      request.input("RegisteredCompanyNumber", sql.VarChar(50), payload.RegisteredCompanyNumber ?? null);
+      request.input("RegisteredCompanyName", sql.VarChar(50), payload.RegisteredCompanyName ?? null);
+      request.input("DrivingLicence", sql.VarChar(100), payload.DrivingLicence ?? null);
+      request.input("PassportNo", sql.VarChar(100), payload.PassportNo ?? null);
+      request.input("RationCard", sql.VarChar(100), payload.RationCard ?? null);
+      request.input("VoterID", sql.VarChar(100), payload.VoterID ?? null);
+      request.input("Others", sql.VarChar(500), payload.Others ?? null);
+      request.input("NRI", sql.Bit, payload.NRI ? 1 : 0);
+
+      // ✅ Main Fix: Always trust frontend’s normalized JourneyDate
+      const journeyDate = safeDate(payload.JourneyDate);
+      console.log("🗓️ Saving JourneyDate (trusted from frontend):", journeyDate);
+      request.input("JourneyDate", sql.Date, journeyDate);
+
+      request.input("CreatedBy", sql.Int, payload.CreatedBy ?? 1);
+      request.input("SavePassengerDetails", sql.VarChar(50), saveFlag);
+
+      // 🧩 Execute stored procedure
+      await request.execute(proc);
+    }
+
+    res.status(201).json({ message: "✅ Booking saved successfully" });
   } catch (err) {
-    console.error("SQL INSERT error:", err);
+    console.error("❌ SQL INSERT error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
+
+
+
+
+
+// Book a seat
+// app.post("/api/bus-booking-seat", async (req, res) => {
+//   try {
+//     const payload = req.body;
+//     const pool = await sql.connect(dbConfig);
+//     const proc = "dbo.sp_BusBookingSeat";
+//     const saveFlag = payload.SavePassengerDetails === "Y" ? "Yes" : "No";
+
+//     const seats = Array.isArray(payload.SeatNo) ? payload.SeatNo : [payload.SeatNo];
+
+//     for (const seat of seats) {
+//       const request = pool.request();
+//       request.input("Flag", sql.Char(1), "I");
+//       request.input("BusBookingSeatID", sql.Int, payload.BusBookingSeatID ?? 0);
+//       request.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
+//       request.input("BusOperatorID", sql.Int, payload.BusOperatorID);
+
+//       // ✅ If user clicked NO (PassengerID = 0) → send NULL to DB
+//       request.input("UserID", sql.Int, payload.UserID === 0 ? null : payload.UserID);
+
+//       request.input("ForSelf", sql.Bit, payload.ForSelf ? 1 : 0);
+//       request.input("IsPrimary", sql.Int, payload.IsPrimary ?? 1);
+
+//       // ✅ Correct seat value
+//       request.input("SeatNo", sql.NVarChar(50), seat);
+
+//       request.input("FirstName", sql.VarChar(250), payload.FirstName ?? null);
+//       request.input("MiddleName", sql.VarChar(250), payload.MiddleName ?? null);
+//       request.input("LastName", sql.VarChar(250), payload.LastName ?? null);
+//       request.input("Email", sql.VarChar(150), payload.Email ?? null);
+//       request.input("ContactNo", sql.VarChar(50), payload.ContactNo ?? null);
+//       request.input("Gender", sql.VarChar(50), payload.Gender ?? null);
+//       request.input("AadharNo", sql.VarChar(20), payload.AadharNo ?? null);
+//       request.input("PancardNo", sql.VarChar(20), payload.PancardNo ?? null);
+//       request.input("BloodGroup", sql.VarChar(10), payload.BloodGroup ?? null);
+//       request.input("DOB", sql.DateTime, safeDate(payload.DOB));
+//       request.input("FoodPref", sql.VarChar(100), payload.FoodPref ?? null);
+//       request.input("Disabled", sql.Bit, payload.Disabled ? 1 : 0);
+//       request.input("Pregnant", sql.Bit, payload.Pregnant ? 1 : 0);
+//       request.input("RegisteredCompanyNumber", sql.VarChar(50), payload.RegisteredCompanyNumber ?? null);
+//       request.input("RegisteredCompanyName", sql.VarChar(50), payload.RegisteredCompanyName ?? null);
+//       request.input("DrivingLicence", sql.VarChar(100), payload.DrivingLicence ?? null);
+//       request.input("PassportNo", sql.VarChar(100), payload.PassportNo ?? null);
+//       request.input("RationCard", sql.VarChar(100), payload.RationCard ?? null);
+//       request.input("VoterID", sql.VarChar(100), payload.VoterID ?? null);
+//       request.input("Others", sql.VarChar(500), payload.Others ?? null);
+//       request.input("NRI", sql.Bit, payload.NRI ? 1 : 0);
+
+//       // ✅ New JourneyDate parameter added
+//       request.input("JourneyDate", sql.Date, safeDate(payload.JourneyDate));
+
+//       request.input("CreatedBy", sql.Int, payload.CreatedBy ?? 1);
+//       request.input("SavePassengerDetails", sql.VarChar(50), saveFlag);
+
+//       await request.execute(proc);
+//     }
+
+//     res.status(201).json({ message: "✅ Booking saved successfully" });
+//   } catch (err) {
+//     console.error("❌ SQL INSERT error:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+
+// app.post("/api/bus-booking-seat", async (req, res) => {
+//   try {
+//     const payload = req.body;
+
+//     // ✅ Validate JourneyDate
+//     if (!payload.JourneyDate) {
+//       return res.status(400).json({ success: false, message: "JourneyDate is required" });
+//     }
+
+//     const pool = await sql.connect(dbConfig);
+//     const proc = "dbo.sp_BusBookingSeat";
+//     const saveFlag = payload.SavePassengerDetails === "Y" ? "Yes" : "No";
+
+//     const seats = Array.isArray(payload.SeatNo) ? payload.SeatNo : [payload.SeatNo];
+
+//     for (const seat of seats) {
+//       const request = pool.request();
+//       request.input("Flag", sql.Char(1), "I");
+//       request.input("BusBookingSeatID", sql.Int, payload.BusBookingSeatID ?? 0);
+//       request.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
+//       request.input("BusOperatorID", sql.Int, payload.BusOperatorID);
+
+//       //If user clicked NO (PassengerID = 0) → send NULL to DB
+//       request.input("UserID", sql.Int, payload.UserID === 0 ? null : payload.UserID);
+
+//       request.input("ForSelf", sql.Bit, payload.ForSelf ? 1 : 0);
+//       request.input("IsPrimary", sql.Int, payload.IsPrimary ?? 1);
+//       request.input("SeatNo", sql.NVarChar(50), seat);
+//       request.input("FirstName", sql.VarChar(250), payload.FirstName ?? null);
+//       request.input("MiddleName", sql.VarChar(250), payload.MiddleName ?? null);
+//       request.input("LastName", sql.VarChar(250), payload.LastName ?? null);
+//       request.input("Email", sql.VarChar(150), payload.Email ?? null);
+//       request.input("ContactNo", sql.VarChar(50), payload.ContactNo ?? null);
+//       request.input("Gender", sql.VarChar(50), payload.Gender ?? null);
+//       request.input("AadharNo", sql.VarChar(20), payload.AadharNo ?? null);
+//       request.input("PancardNo", sql.VarChar(20), payload.PancardNo ?? null);
+//       request.input("BloodGroup", sql.VarChar(10), payload.BloodGroup ?? null);
+//       request.input("DOB", sql.DateTime, safeDate(payload.DOB));
+//       request.input("FoodPref", sql.VarChar(100), payload.FoodPref ?? null);
+//       request.input("Disabled", sql.Bit, payload.Disabled ? 1 : 0);
+//       request.input("Pregnant", sql.Bit, payload.Pregnant ? 1 : 0);
+//       request.input("RegisteredCompanyNumber", sql.VarChar(50), payload.RegisteredCompanyNumber ?? null);
+//       request.input("RegisteredCompanyName", sql.VarChar(50), payload.RegisteredCompanyName ?? null);
+//       request.input("DrivingLicence", sql.VarChar(100), payload.DrivingLicence ?? null);
+//       request.input("PassportNo", sql.VarChar(100), payload.PassportNo ?? null);
+//       request.input("RationCard", sql.VarChar(100), payload.RationCard ?? null);
+//       request.input("VoterID", sql.VarChar(100), payload.VoterID ?? null);
+//       request.input("Others", sql.VarChar(500), payload.Others ?? null);
+//       request.input("NRI", sql.Bit, payload.NRI ? 1 : 0);
+//       request.input("CreatedBy", sql.Int, payload.CreatedBy ?? 1);
+//       request.input("SavePassengerDetails", sql.VarChar(50), saveFlag);
+
+      
+//       request.input("JourneyDate", sql.Date, payload.JourneyDate);
+
+//       await request.execute(proc);
+
+//       // ==========================================================
+//       // ✅ NEW ADDITION: Manage SeatLock table & Booking Status by JourneyDate
+//       // ==========================================================
+
+//       // 1️⃣ Remove temporary lock for this seat on the same journey date
+//       const unlockRequest = pool.request();
+//       unlockRequest.input("BusOperatorID", sql.Int, payload.BusOperatorID);
+//       unlockRequest.input("SeatNo", sql.VarChar(50), seat);
+//       unlockRequest.input("JourneyDate", sql.Date, payload.JourneyDate);
+//       await unlockRequest.query(`
+//         DELETE FROM SeatLock
+//         WHERE BusOperatorID = @BusOperatorID
+//           AND SeatNo = @SeatNo
+//           AND CAST(JourneyDate AS DATE) = @JourneyDate
+//       `);
+
+//       // 2️⃣ Update booking status to "Booked" and mark PaymentStatus as "Pending" for this date
+//       const updateRequest = pool.request();
+//       updateRequest.input("BusOperatorID", sql.Int, payload.BusOperatorID);
+//       updateRequest.input("SeatNo", sql.VarChar(50), seat);
+//       updateRequest.input("JourneyDate", sql.Date, payload.JourneyDate);
+//       await updateRequest.query(`
+//         UPDATE BusBookingSeat
+//         SET Status = 'Booked',
+//             PaymentStatus = 'Pending',
+//             LockStatus = 'Unlocked'
+//         WHERE BusOperatorID = @BusOperatorID
+//           AND SeatNo = @SeatNo
+//           AND CAST(JourneyDate AS DATE) = @JourneyDate
+//       `);
+//     }
+
+//     res.status(201).json({ message: "✅ Booking saved successfully for given JourneyDate" });
+//   } catch (err) {
+//     console.error("❌ SQL INSERT error:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+
+
+
+// app.post("/api/user/get-or-create", async (req, res) => {
+//   try {
+//     const { FirstName, LastName, Email, ContactNo, Gender, Age } = req.body;
+//     const pool = await sql.connect(dbConfig);
+
+//     // 1. Check existing passenger
+//     const existing = await pool.request()
+//       .input("ContactNo", sql.VarChar, ContactNo)
+//       .query(`
+//         SELECT UserID 
+//         FROM SavedPassengerDtls
+//         WHERE ContactNo = @ContactNo
+//       `);
+
+//     if (existing.recordset.length > 0) {
+//       return res.json({ UserID: existing.recordset[0].UserID });
+//     }
+
+//     // 2. Create new User
+//     const newUser = await pool.request()
+//       .query(`
+//         INSERT INTO [User] (UserType, Status,CreatedBy, CreatedDt)
+//         OUTPUT INSERTED.UserID
+//         VALUES (1, 1,1, GETDATE())
+//       `);
+
+//     const newUserId = newUser.recordset[0].UserID;
+
+//     // 3. Insert passenger info linked to UserID
+//     await pool.request()
+//       .input("UserID", sql.Int, newUserId)
+//       .input("FirstName", sql.VarChar, FirstName)
+//       .input("LastName", sql.VarChar, LastName)
+//       .input("Email", sql.VarChar, Email)
+//       .input("ContactNo", sql.VarChar, ContactNo)
+//       .input("Gender", sql.VarChar, Gender)
+//       .input("Age", sql.Int, Age)
+//       .query(`
+//         INSERT INTO SavedPassengerDtls (UserID, FirstName, LastName, Email, ContactNo, Gender, Age, PrimaryUser, CreatedBy,CreatedDt)
+//         VALUES (@UserID, @FirstName, @LastName, @Email, @ContactNo, @Gender, @Age, 1,@UserID,GETDATE())
+//       `);
+
+//     return res.json({ UserID: newUserId });
+
+//   } catch (err) {
+//     return res.status(500).json({ error: err.message });
+//   }
+// });
+
+
+
+
+
+//////////////////////
+
+
+
 // ------------------- USER SIGNUP & LOGIN -------------------
 
+
+app.post("/api/user/get-or-create", async (req, res) => {
+  try {
+    const {
+      FirstName,
+      MiddleName,
+      LastName,
+      Email,
+      ContactNo,
+      Gender,
+      Age,
+      AadharNo,
+      PancardNo,
+      BloodGroup,
+      DOB,
+      FoodPref,
+      Disabled,
+      DrivingLicence,
+      PassportNo,
+      RationCard,
+      VoterID,
+      Others,
+      NRI,
+      CreatedBy
+    } = req.body;
+
+    const pool = await sql.connect(dbConfig);
+
+    // 1️⃣ Check if contact exists
+    const existing = await pool.request()
+      .input("ContactNo", sql.VarChar, ContactNo)
+      .query(`
+        SELECT UserID 
+        FROM SavedPassengerDtls
+        WHERE ContactNo = @ContactNo
+      `);
+
+    // ✅ If exists → return existing user
+    if (existing.recordset.length > 0) {
+      return res.json({ UserID: existing.recordset[0].UserID });
+    }
+
+    // 2️⃣ Create new User
+    const newUser = await pool.request()
+      .query(`
+        INSERT INTO [User] (UserType, Status, CreatedBy, CreatedDt)
+        OUTPUT INSERTED.UserID
+        VALUES (1, 1, 1, GETDATE())
+      `);
+
+    const newUserId = newUser.recordset[0].UserID;
+
+    // 3️⃣ Insert passenger info (FULL DETAILS)
+    await pool.request()
+      .input("UserID", sql.Int, newUserId)
+      .input("FirstName", sql.VarChar, FirstName)
+      .input("MiddleName", sql.VarChar, MiddleName)
+      .input("LastName", sql.VarChar, LastName)
+      .input("Email", sql.VarChar, Email)
+      .input("ContactNo", sql.VarChar, ContactNo)
+      .input("Gender", sql.VarChar, Gender)
+      .input("Age", sql.Int, Age)
+      .input("AadharNo", sql.VarChar, AadharNo)
+      .input("PancardNo", sql.VarChar, PancardNo)
+      .input("BloodGroup", sql.VarChar, BloodGroup)
+      .input("DOB", sql.Date, DOB)
+      .input("FoodPref", sql.VarChar, FoodPref)
+      .input("Disabled", sql.Bit, Disabled)
+      .input("DrivingLicence", sql.VarChar, DrivingLicence)
+      .input("PassportNo", sql.VarChar, PassportNo)
+      .input("RationCard", sql.VarChar, RationCard)
+      .input("VoterID", sql.VarChar, VoterID)
+      .input("Others", sql.VarChar, Others)
+      .input("NRI", sql.Bit, NRI)
+      .input("CreatedBy", sql.Int, newUserId)
+      .query(`
+        INSERT INTO SavedPassengerDtls 
+        (UserID, FirstName, MiddleName, LastName, Email, ContactNo, Gender, Age, 
+         AadharNo, PancardNo, BloodGroup, DOB, FoodPref, Disabled, DrivingLicence, 
+         PassportNo, RationCard, VoterID, Others, NRI, PrimaryUser, CreatedBy, CreatedDt)
+        VALUES 
+        (@UserID, @FirstName, @MiddleName, @LastName, @Email, @ContactNo, @Gender, @Age,
+         @AadharNo, @PancardNo, @BloodGroup, @DOB, @FoodPref, @Disabled, @DrivingLicence,
+         @PassportNo, @RationCard, @VoterID, @Others, @NRI, 1, @CreatedBy, GETDATE())
+      `);
+
+    return res.json({ UserID: newUserId });
+
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
 
 
  app.get("/api/package-list", (req, res) => {
@@ -1362,7 +2148,7 @@ app.post("/api/payment/create-order", async (req, res) => {
       paymentFlow: {
         type: "PG_CHECKOUT",
         message: "Payment for testing",
-        // merchantUrls: { redirectUrl: `http://localhost:5000/api/payment/callback` },
+        // merchantUrls: { redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback` },
         merchantUrls: { 
       redirectUrl: `http://localhost:8080/payment-result?orderId=${merchantOrderId}` 
     },
