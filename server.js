@@ -2150,7 +2150,7 @@ app.post("/api/payment/create-order", async (req, res) => {
         message: "Payment for testing",
         // merchantUrls: { redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback` },
         merchantUrls: { 
-      redirectUrl: `http://localhost:8080/payment-result?orderId=${merchantOrderId}` 
+      redirectUrl: `https://api.tirupatipackagetours.com/payment-result?orderId=${merchantOrderId}` 
     },
         paymentModeConfig: {
           enabledPaymentModes: [],
