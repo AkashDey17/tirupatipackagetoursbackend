@@ -594,40 +594,40 @@ const PORT = process.env.PORT || 5000;
 
 
 
-const dbConfig = {
-  user: "sqladmin",
-  password: "Sanchar6t1",
-  server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com",
-  port: 1433,
-  database: "Sanchar6T_Dev",
-  options: {
-    encrypt: true,
-    trustServerCertificate: true,
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
-};
-
-
 // const dbConfig = {
-//   user: process.env.DB_USER,       
-//   password: process.env.DB_PASSWORD,
-//   server: process.env.DB_SERVER,   
-//   port: parseInt(process.env.DB_PORT),  // <-- use port from .env
-//   database: process.env.DB_NAME,
+//   user: "sqladmin",
+//   password: "Sanchar6t1",
+//   server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com",
+//   port: 1433,
+//   database: "Sanchar6T_Dev",
 //   options: {
-//     encrypt: false,                // false for local dev
-//     trustServerCertificate: true
+//     encrypt: true,
+//     trustServerCertificate: true,
 //   },
 //   pool: {
 //     max: 10,
 //     min: 0,
-//     idleTimeoutMillis: 30000
-//   }
+//     idleTimeoutMillis: 30000,
+//   },
 // };
+
+
+const dbConfig = {
+  user: process.env.DB_USER,       
+  password: process.env.DB_PASSWORD,
+  server: process.env.DB_SERVER,   
+  port: parseInt(process.env.DB_PORT),  // <-- use port from .env
+  database: process.env.DB_NAME,
+  options: {
+    encrypt: false,                // false for local dev
+    trustServerCertificate: true
+  },
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000
+  }
+};
 
 
 
@@ -643,76 +643,6 @@ app.get("/api/test-connection", async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Connection failed:", err);
-    res.status(500).json({ success: false, error: err.message });
-  } finally {
-    sql.close();
-  }
-});
-
-// ✅ 2. List all tables
-app.get("/api/tables", async (req, res) => {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request().query(`
-      SELECT TABLE_SCHEMA, TABLE_NAME 
-      FROM INFORMATION_SCHEMA.TABLES 
-      WHERE TABLE_TYPE = 'BASE TABLE'
-    `);
-    res.json({ success: true, tables: result.recordset });
-  } catch (err) {
-    console.error("❌ Error fetching tables:", err);
-    res.status(500).json({ success: false, error: err.message });
-  } finally {
-    sql.close();
-  }
-});
-
-// ✅ 3. List all views
-app.get("/api/views", async (req, res) => {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request().query(`
-      SELECT TABLE_SCHEMA, TABLE_NAME 
-      FROM INFORMATION_SCHEMA.VIEWS
-    `);
-    res.json({ success: true, views: result.recordset });
-  } catch (err) {
-    console.error("❌ Error fetching views:", err);
-    res.status(500).json({ success: false, error: err.message });
-  } finally {
-    sql.close();
-  }
-});
-
-// ✅ 4. List all stored procedures
-app.get("/api/stored-procedures", async (req, res) => {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request().query(`
-      SELECT SPECIFIC_SCHEMA, SPECIFIC_NAME 
-      FROM INFORMATION_SCHEMA.ROUTINES 
-      WHERE ROUTINE_TYPE = 'PROCEDURE'
-    `);
-    res.json({ success: true, procedures: result.recordset });
-  } catch (err) {
-    console.error("❌ Error fetching stored procedures:", err);
-    res.status(500).json({ success: false, error: err.message });
-  } finally {
-    sql.close();
-  }
-});
-
-// ✅ 5. Fetch top 10 rows from a given table
-app.get("/api/data/:tableName", async (req, res) => {
-  const { tableName } = req.params;
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool
-      .request()
-      .query(`SELECT TOP 10 * FROM [${tableName}]`);
-    res.json({ success: true, table: tableName, data: result.recordset });
-  } catch (err) {
-    console.error("❌ Error fetching data:", err);
     res.status(500).json({ success: false, error: err.message });
   } finally {
     sql.close();
@@ -803,22 +733,6 @@ app.post("/itinerary", async (req, res) => {
 
 // ------------------- BUS BOOKING DETAILS -------------------
 
-// Get all bus booking details
-app.get("/api/bus-booking-details", async (req, res) => {
-  try {
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request().query(`
-      SELECT TOP 1000 *
-      FROM [dbo].[BusBookingDetails]
-      ORDER BY BusBooKingDetailID
-    `);
-    res.json(result.recordset);
-  } catch (err) {
-    console.error("SQL GET error:", err);
-    res.status(500).json({ error: "Failed to fetch bus booking details" });
-  }
-});
-
 // Get bus booking detail by ID
 app.get("/api/bus-booking-details/:id", async (req, res) => {
   const id = parseInt(req.params.id);
@@ -863,84 +777,6 @@ app.post("/api/bus-booking-details", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
-
-
-
-
-
-
-// app.get("/api/bus-details", async (req, res) => {
-//   try {
-//     const { packageId } = req.query; // ✅ Read packageId
-//     let pool = await sql.connect(dbConfig);
-    
-//     let request = pool.request();
-
-//     // ✅ Base Query
-//     let query = `
-//       SELECT 
-//         b.[BusBooKingDetailID],
-//         b.[OperatorID],
-//         b.[PackageID],
-//         b.[WkEndSeatPrice],
-//         b.[WkDaySeatPrice],
-//         b.[DepartureTime],
-//         b.[Arrivaltime],
-//         b.[Status],
-//         b.[PackageName],
-//         b.[BusNo],
-//         b.[BusSeats],
-//         b.[BusType],
-//         b.[FemaleSeatNo],
-//         a.[AMName]
-//       FROM [dbo].[vw_BusBookingDetails] b
-//       LEFT JOIN [dbo].[vw_BusAmenities] a ON b.OperatorID = a.BusOperatorID
-//       LEFT JOIN [dbo].[vw_BusOperator] o ON b.OperatorID = o.BusOperatorID
-//       WHERE o.[SourceSystem] = 'TirupatiPackage'
-//     `;
-
-//     // ✅ Filter if packageId received
-//     if (packageId) {
-//       query += " AND b.[PackageID] = @packageId";
-//       request.input("packageId", sql.Int, packageId);
-//     }
-
-//     const result = await request.query(query);
-
-//     const buses = {};
-//     result.recordset.forEach(row => {
-//       if (!buses[row.BusBooKingDetailID]) {
-//         buses[row.BusBooKingDetailID] = {
-//           BusBooKingDetailID: row.BusBooKingDetailID,
-//           OperatorID: row.OperatorID,
-//           PackageID: row.PackageID,
-//           WkEndSeatPrice: row.WkEndSeatPrice,
-//           WkDaySeatPrice: row.WkDaySeatPrice,
-//           DepartureTime: row.DepartureTime,
-//           Arrivaltime: row.Arrivaltime,
-//           Status: row.Status,
-//           PackageName: row.PackageName,
-//           BusNo: row.BusNo,
-//           BusSeats: row.BusSeats,
-//           BusType: row.BusType,
-//           FemaleSeatNo: row.FemaleSeatNo,
-//           amenities: []
-//         };
-//       }
-//       if (row.AMName) buses[row.BusBooKingDetailID].amenities.push(row.AMName);
-//     });
-
-//     res.json(Object.values(buses));
-//   } catch (err) {
-//     console.error("Error fetching bus details:", err);
-//     res.status(500).json({ error: "Server error fetching bus details" });
-//   }
-// });
-
-
-///////////////////////////////////////////////////
 
 app.get("/api/bus-details", async (req, res) => {
   try {
@@ -1044,346 +880,6 @@ app.get("/bus-booking-details/by-operator-package/:operatorId/:packageId", async
   }
 });
 
-
-
-////////////////////// ✅ MEMORY SEAT LOCK STORAGE //////////////////////////
-const seatLocks = new Map(); // busId-seat
-const SEAT_LOCK_TIME = 10 * 60 * 1000; // 10 mins timeout
-
-// 🔓 Auto clear expired locks every 1 minute
-setInterval(() => {
-  seatLocks.forEach((value, key) => {
-    if (Date.now() - value.time > SEAT_LOCK_TIME) {
-      seatLocks.delete(key);
-    }
-  });
-}, 60000);
-
-////////////////////// ✅ LOCK SEAT //////////////////////////
-app.post("/api/seat/lock", (req, res) => {
-  const { busId, seatNo, sessionId } = req.body;
-  const key = `${busId}-${seatNo}`;
-
-  const existing = seatLocks.get(key);
-  if (existing && Date.now() - existing.time < SEAT_LOCK_TIME) {
-    return res.json({ success: false, message: "Seat already locked" });
-  }
-
-  seatLocks.set(key, { sessionId, time: Date.now() });
-  return res.json({ success: true, message: "Seat locked" });
-});
-
-////////////////////// ✅ CONFIRM SEAT (after DB entry) //////////////////////////
-app.post("/api/seat/confirm", (req, res) => {
-  const { busId, seatNo } = req.body;
-  const key = `${busId}-${seatNo}`;
-  seatLocks.delete(key);
-  return res.json({ success: true, message: "Seat confirmed" });
-});
-
-//////////////////////////////////////////////////
-
-// ✅ Get remaining seats for a bus
-app.get("/api/bus/bookedSeats", async (req, res) => {
-  try {
-    const { busId } = req.query;
-    if (!busId) return res.status(400).json({ message: "Bus ID is required" });
-
-    const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .input("BusOperatorID", sql.Int, busId)
-      .query(`SELECT BusSeats FROM BusOperator WHERE BusOperatorID = @BusOperatorID`);
-
-    if (result.recordset.length === 0) {
-      return res.status(404).json({ message: "Bus not found" });
-    }
-
-    const remainingSeats = result.recordset[0].BusSeats;
-
-    res.status(200).json({
-      success: true,
-      remainingSeats,
-    });
-  } catch (error) {
-    console.error("❌ Error fetching booked seats:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
-
-
-// ✅ Get seat layout + remaining seats + price dynamically
-
-// app.get("/api/bus/seatLayout", async (req, res) => {
-//   try {
-//     const { busId } = req.query;
-//     if (!busId) {
-//       return res.status(400).json({ success: false, message: "Bus ID is required" });
-//     }
-
-//     const pool = await sql.connect(dbConfig);
-//     const result = await pool.request()
-//       .input("BusId", sql.Int, busId)
-//       .query(`
-//          SELECT 
-//       bbd.WkDaySeatPrice AS weekday,
-//       bbd.WkEndSeatPrice AS weekend,
-
-//       (SELECT COUNT(*) 
-//          FROM BusBookingSeat bbs 
-//          WHERE bbs.BusBookingDetailsID = @BusId 
-//            AND bbs.Status = 'Booked') AS bookedCount,
-
-//       (bo.BusSeats 
-//        - (
-//            SELECT COUNT(*) 
-//            FROM BusBookingSeat bbs 
-//            WHERE bbs.BusBookingDetailsID = @BusId 
-//              AND bbs.Status = 'Booked'
-//          )
-//        - (
-//            SELECT COUNT(*) 
-//            FROM SeatLock sl 
-//            WHERE sl.BusBookingDetailsID = @BusId 
-//              AND sl.ExpiresAt > GETUTCDATE()
-//          )
-//       ) AS remainingSeats,
-
-//       (SELECT STRING_AGG(SeatNo, ',') 
-//          FROM BusBookingSeat bbs 
-//          WHERE bbs.BusBookingDetailsID = @BusId 
-//            AND bbs.Status = 'Booked') AS bookedSeats,
-
-//       (SELECT STRING_AGG(SeatNo, ',') 
-//          FROM SeatLock sl 
-//          WHERE sl.BusBookingDetailsID = @BusId 
-//            AND sl.ExpiresAt > GETUTCDATE()) AS lockedSeats,
-
-//       bo.FemaleSeatNo
-//     FROM BusOperator bo
-//     JOIN BusBookingDetails bbd ON bo.BusOperatorID = bbd.OperatorID
-//     WHERE bbd.BusBookingDetailID = @BusId;
-//       `);
-
-//     const data = result.recordset[0] || {};
-
-//     // Parse booked/locked seats as arrays
-//     const bookedSeats = data.bookedSeats
-//       ? data.bookedSeats.split(",").map((s) => s.trim())
-//       : [];
-
-//     const lockedSeats = data.lockedSeats
-//       ? data.lockedSeats.split(",").map((s) => s.trim())
-//       : [];
-
-//     res.json({
-//       success: true,
-//       price: {
-//         weekday: data.weekday,
-//         weekend: data.weekend,
-//         default: data.price,
-//       },
-//       bookedSeats,
-//       lockedSeats,
-//       remainingSeats: data.remainingSeats,
-//       femaleSeatNo: data.FemaleSeatNo,
-//     });
-//   } catch (error) {
-//     console.error("❌ Error in /api/bus/seatLayout:", error);
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// });
-
-// app.get("/api/bus/seatLayout", async (req, res) => {
-//   try {
-//     const { busId, journeyDate } = req.query;
-
-//     if (!busId || !journeyDate) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Bus ID and Journey Date are required.",
-//       });
-//     }
-
-//     const pool = await sql.connect(dbConfig);
-//     const result = await pool.request()
-//       .input("BusId", sql.Int, busId)
-//       .input("JourneyDate", sql.Date, journeyDate)
-//       .query(`
-//         SELECT 
-//           bbd.WkDaySeatPrice AS weekday,
-//           bbd.WkEndSeatPrice AS weekend,
-
-//           (SELECT COUNT(*) 
-//              FROM BusBookingSeat bbs 
-//              WHERE bbs.BusBookingDetailsID = @BusId 
-//                AND CONVERT(date, bbs.JourneyDate) = CONVERT(date, @JourneyDate)
-//                AND bbs.Status = 'Booked') AS bookedCount,
-
-//           (bo.BusSeats 
-//            - (
-//                SELECT COUNT(*) 
-//                FROM BusBookingSeat bbs 
-//                WHERE bbs.BusBookingDetailsID = @BusId 
-//                  AND CONVERT(date, bbs.JourneyDate) = CONVERT(date, @JourneyDate)
-//                  AND bbs.Status = 'Booked'
-//              )
-//            - (
-//                SELECT COUNT(*) 
-//                FROM SeatLock sl 
-//                WHERE sl.BusBookingDetailsID = @BusId 
-//                  AND CONVERT(date, sl.JourneyDate) = CONVERT(date, @JourneyDate)
-//                  AND sl.ExpiresAt > GETUTCDATE()
-//              )
-//           ) AS remainingSeats,
-
-//           (SELECT STRING_AGG(SeatNo, ',') 
-//              FROM BusBookingSeat bbs 
-//              WHERE bbs.BusBookingDetailsID = @BusId 
-//                AND CONVERT(date, bbs.JourneyDate) = CONVERT(date, @JourneyDate)
-//                AND bbs.Status = 'Booked') AS bookedSeats,
-
-//           (SELECT STRING_AGG(SeatNo, ',') 
-//              FROM SeatLock sl 
-//              WHERE sl.BusBookingDetailsID = @BusId 
-//                AND CONVERT(date, sl.JourneyDate) = CONVERT(date, @JourneyDate)
-//                AND sl.ExpiresAt > GETUTCDATE()) AS lockedSeats,
-
-//           bo.FemaleSeatNo
-//         FROM BusOperator bo
-//         JOIN BusBookingDetails bbd ON bo.BusOperatorID = bbd.OperatorID
-//         WHERE bbd.BusBookingDetailID = @BusId;
-//       `);
-
-//     const data = result.recordset[0] || {};
-//     const bookedSeats = data.bookedSeats
-//       ? data.bookedSeats.split(",").map(s => s.trim())
-//       : [];
-//     const lockedSeats = data.lockedSeats
-//       ? data.lockedSeats.split(",").map(s => s.trim())
-//       : [];
-
-//     res.json({
-//       success: true,
-//       price: { weekday: data.weekday, weekend: data.weekend },
-//       bookedSeats,
-//       lockedSeats,
-//       remainingSeats: data.remainingSeats ?? 0,
-//       femaleSeatNo: data.FemaleSeatNo,
-//     });
-//   } catch (error) {
-//     console.error("❌ Error in /api/bus/seatLayout:", error);
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// });
-
-// app.get("/api/bus/seatLayout", async (req, res) => {
-//   try {
-//     const { busId, journeyDate } = req.query;
-
-//     if (!busId) {
-//       return res
-//         .status(400)
-//         .json({ success: false, message: "Bus ID is required" });
-//     }
-
-//     const pool = await sql.connect(dbConfig);
-
-//     // ✅ Step 1: Auto-unblock past-dated bookings
-//     await pool.request().query(`
-//       UPDATE BusBookingSeat
-//       SET LockStatus = 'Unblocked',
-//           Status = CASE WHEN PaymentStatus = 'Pending' THEN 'Cancelled' ELSE Status END
-//       WHERE JourneyDate < CAST(GETDATE() AS DATE)
-//         AND LockStatus != 'Unblocked';
-//     `);
-
-//     // ✅ Step 2: Fetch seat layout for the selected bus & journey date
-//     const result = await pool
-//       .request()
-//       .input("BusId", sql.Int, busId)
-//       .input("JourneyDate", sql.Date, journeyDate || new Date())
-//       .query(`
-//         SELECT 
-//           bbd.WkDaySeatPrice AS weekday,
-//           bbd.WkEndSeatPrice AS weekend,
-
-//           -- ✅ Total booked seats for this bus on this specific date
-//           (SELECT COUNT(*) 
-//            FROM BusBookingSeat bbs 
-//            WHERE bbs.BusBookingDetailsID = @BusId 
-//              AND bbs.Status = 'Booked'
-//              AND CAST(bbs.JourneyDate AS DATE) = @JourneyDate
-//           ) AS bookedCount,
-
-//           -- ✅ Remaining seats considering bookings and valid locks
-//           (bo.BusSeats 
-//            - (
-//                SELECT COUNT(*) 
-//                FROM BusBookingSeat bbs 
-//                WHERE bbs.BusBookingDetailsID = @BusId 
-//                  AND bbs.Status = 'Booked'
-//                  AND CAST(bbs.JourneyDate AS DATE) = @JourneyDate
-//              )
-//            - (
-//                SELECT COUNT(*) 
-//                FROM SeatLock sl 
-//                WHERE sl.BusBookingDetailsID = @BusId 
-//                  AND CAST(sl.JourneyDate AS DATE) = @JourneyDate
-//                  AND sl.ExpiresAt > GETUTCDATE()
-//              )
-//           ) AS remainingSeats,
-
-//           -- ✅ Seats booked for this date
-//           (SELECT STRING_AGG(SeatNo, ',') 
-//            FROM BusBookingSeat bbs 
-//            WHERE bbs.BusBookingDetailsID = @BusId 
-//              AND bbs.Status = 'Booked'
-//              AND CAST(bbs.JourneyDate AS DATE) = @JourneyDate
-//           ) AS bookedSeats,
-
-//           -- ✅ Seats locked for this date
-//           (SELECT STRING_AGG(SeatNo, ',') 
-//            FROM SeatLock sl 
-//            WHERE sl.BusBookingDetailsID = @BusId 
-//              AND CAST(sl.JourneyDate AS DATE) = @JourneyDate
-//              AND sl.ExpiresAt > GETUTCDATE()
-//           ) AS lockedSeats,
-
-//           -- ✅ Female-only seats
-//           bo.FemaleSeatNo
-//         FROM BusOperator bo
-//         JOIN BusBookingDetails bbd ON bo.BusOperatorID = bbd.OperatorID
-//         WHERE bbd.BusBookingDetailID = @BusId;
-//       `);
-
-//     // ✅ Parse data safely
-//     const data = result.recordset[0] || {};
-
-//     const bookedSeats = data.bookedSeats
-//       ? data.bookedSeats.split(",").map((s) => s.trim())
-//       : [];
-
-//     const lockedSeats = data.lockedSeats
-//       ? data.lockedSeats.split(",").map((s) => s.trim())
-//       : [];
-
-//     // ✅ Send clean response
-//     res.json({
-//       success: true,
-//       price: {
-//         weekday: Number(data.weekday) || 0,
-//         weekend: Number(data.weekend) || 0,
-//       },
-//       bookedSeats,
-//       lockedSeats,
-//       remainingSeats: data.remainingSeats || 0,
-//       femaleSeatNo: data.FemaleSeatNo || null,
-//     });
-//   } catch (error) {
-//     console.error("❌ Error in /api/bus/seatLayout:", error);
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// });
 
 app.get("/api/bus/seatLayout", async (req, res) => {
   try {
@@ -1494,63 +990,6 @@ WHERE bbd.BusBookingDetailID = @BusId;
   }
 });
 
-
-// ✅ Updated /api/bus/bookedSeats endpoint
-app.get("/api/bus/bookedSeats", async (req, res) => {
-  try {
-    const busId = req.query.busId;
-    if (!busId)
-      return res.status(400).json({ success: false, message: "busId is required" });
-
-    const pool = await sql.connect(dbConfig);
-    const result = await pool
-      .request()
-      .input("BusOperatorID", sql.Int, busId)
-      .query(`SELECT SeatNo FROM BusBookingSeat WHERE BusOperatorID = @BusOperatorID`);
-
-    const bookedSeats = result.recordset.map(r => r.SeatNo);
-    res.json({ success: true, bookedSeats });
-  } catch (err) {
-    console.error("❌ Error fetching booked seats:", err);
-    res.status(500).json({ success: false, message: "Error fetching seats" });
-  }
-});
-
-// ✅ New route to sync remaining seats
-app.post("/api/bus/syncSeats", async (req, res) => {
-  try {
-    const { BusOperatorID } = req.body;
-    const pool = await sql.connect(dbConfig);
-
-    // Count total booked seats
-    const countResult = await pool.request()
-      .input("BusOperatorID", sql.Int, BusOperatorID)
-      .query(`SELECT COUNT(*) AS TotalBooked FROM BusBookingSeat WHERE BusOperatorID = @BusOperatorID`);
-
-    const totalBooked = countResult.recordset[0].TotalBooked;
-
-    // Update BusOperator.BusSeats (remaining seats)
-    await pool.request()
-      .input("BusOperatorID", sql.Int, BusOperatorID)
-      .query(`
-        UPDATE BusOperator
-        SET BusSeats = TotalSeats - ${totalBooked}
-        WHERE BusOperatorID = @BusOperatorID
-      `);
-
-    res.json({ success: true, message: "Seat count synced successfully" });
-  } catch (error) {
-    console.error("❌ Error syncing seats:", error);
-    res.status(500).json({ success: false, message: "Error syncing seats" });
-  }
-});
-
-
-
-
-
-
-
 app.post("/api/bus-booking-seat", async (req, res) => {
   try {
     const payload = req.body;
@@ -1660,9 +1099,57 @@ app.post("/api/bus-booking-seat", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 // ------------------- USER SIGNUP & LOGIN -------------------
+app.post("/api/seat/lock", async (req, res) => {
+  const { busId, seatNo, sessionId } = req.body;
 
+  try {
+    const pool = await sql.connect(dbConfig);
+    const request = pool.request();
+
+    // Check if seat is already locked or booked
+    const check = await request.query(`
+      SELECT TOP 1 * FROM SeatLock 
+      WHERE BusOperatorID = ${busId} AND SeatNo = '${seatNo}' AND ExpiresAt > GETDATE()
+    `);
+
+    if (check.recordset.length > 0) {
+      return res.json({ success: false, message: "Seat already locked" });
+    }
+
+    // Lock expires after 5 minutes
+    const lockMinutes = 5;
+    await request.query(`
+      INSERT INTO SeatLock (BusOperatorID, SeatNo, SessionID, ExpiresAt)
+      VALUES (${busId}, '${seatNo}', '${sessionId}', DATEADD(MINUTE, ${lockMinutes}, GETDATE()))
+    `);
+
+    return res.json({ success: true, message: "Seat locked successfully" });
+  } catch (err) {
+    console.error("Lock error:", err);
+    return res.status(500).json({ success: false, message: "Lock error" });
+  }
+});
+
+app.post("/api/seat/unlock", async (req, res) => {
+  const { busId, seatNo, sessionId } = req.body;
+
+  try {
+    const pool = await sql.connect(connectionString);
+    const request = pool.request();
+
+    // Only unlock if the same session locked it
+    await request.query(`
+      DELETE FROM SeatLock
+      WHERE BusOperatorID = ${busId} AND SeatNo = '${seatNo}' AND SessionID = '${sessionId}'
+    `);
+
+    return res.json({ success: true, message: "Seat unlocked" });
+  } catch (err) {
+    console.error("Unlock error:", err);
+    return res.status(500).json({ success: false, message: "Unlock error" });
+  }
+});
 
 app.post("/api/user/get-or-create", async (req, res) => {
   try {
@@ -1820,8 +1307,6 @@ app.post("/api/submit-feedback", async (req, res) => {
   }
 });
 
-
-
 app.get("/api/busBoardingCounts", async (req, res) => {
   try {
     const pool = await sql.connect(dbConfig);
@@ -1847,13 +1332,102 @@ app.get("/api/busBoardingCounts", async (req, res) => {
 
 /////// phone pe payment ///////////
 
-// --- PhonePe Sandbox Test Credentials ---
+app.post("/api/success", async (req, res) => {
+  try {
+    const {
+      UserID,
+      BusBookingSeatID,
+       BookingdtlsID, 
+      Amount,
+      PaymentMode,
+      TransactionID,
+      TransactionResponse,
+      TransactionCode,
+      PaymentStatus,
+      ErrorCode,
+      CreatedBy,
+      orderId,
+      transactionId,
+      status,
+      code,
+    } = req.body;
+
+    // 🧩 Normalize incoming values
+    const normalizedAmount = parseInt(Amount || req.body.amount || 0);
+    const normalizedTxnId = TransactionID || transactionId || orderId || null;
+    const normalizedStatus = PaymentStatus || status || "Success";
+    const normalizedCode = TransactionCode || code || "00";
+    const normalizedResponse =
+      TransactionResponse || JSON.stringify(req.body);
+
+    // ⚠️ Validate
+    if (!normalizedTxnId || !normalizedAmount) {
+      return res.status(400).json({
+        success: false,
+        message: "Amount and TransactionID are required",
+      });
+    }
+
+    // ✅ If Booking details not present, try to fetch from session/local cache
+    // (optional logic - only if you store booking data in DB or Redis)
+    // Example:
+    // const bookingInfo = await getBookingFromCache(orderId);
+
+    // ✅ Connect to SQL
+    const pool = await sql.connect(dbConfig);
+    const request = pool.request();
+
+    // 🧾 Prepare SQL parameters
+    request.input("Flag", sql.Char(1), "I");
+    request.input("PaymentID", sql.Int, 0);
+    request.input("UserID", sql.Int, UserID ?? null);
+    request.input("BookingdtlsID", sql.Int, BookingdtlsID ?? null);
+    // ✅ Safely parse and validate BusBookingSeatID
+const parsedBusBookingSeatId =
+  BusBookingSeatID && BusBookingSeatID !== "undefined"
+    ? parseInt(BusBookingSeatID)
+    : null;
+
+request.input("BusBookingSeatID", sql.Int, parsedBusBookingSeatId);
+
+
+    request.input("Amount", sql.Int, normalizedAmount);
+    request.input("PaymentMode", sql.VarChar(50), PaymentMode ?? "PhonePe");
+    request.input("TransactionID", sql.VarChar(sql.MAX), normalizedTxnId);
+    request.input("TransactionResponse", sql.VarChar(sql.MAX), normalizedResponse);
+    request.input("TransactionCode", sql.VarChar(50), normalizedCode);
+    request.input("PaymentStatus", sql.VarChar(50), normalizedStatus);
+    request.input("ErrorCode", sql.VarChar(500), ErrorCode ?? null);
+    request.input("CreatedBy", sql.Int, CreatedBy ?? UserID ?? 1);
+
+    // ✅ Execute Stored Procedure
+    await request.execute("dbo.sp_Payment");
+
+    console.log("✅ Payment recorded successfully:", normalizedTxnId);
+
+    res.status(201).json({
+      success: true,
+      message: "✅ Payment recorded successfully in database",
+    });
+  } catch (err) {
+    console.error("❌ Error saving payment:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to record payment",
+      error: err.message,
+    });
+  }
+});
+
+
+// ---------------------------------------------
+// ✅ PHONEPE PAYMENT CREATION
+// ---------------------------------------------
 const MERCHANT_ID = "TEST-M222NJL8ZHVEM_25041";
 const CLIENT_SECRET = "NjIxZTdiZGYtMzlkOS00ZTkyLWFhNjItZTZhNTBjNTgyM2I0";
 const CLIENT_VERSION = "1";
 const SANDBOX_BASE_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
 
-// --- Helper: Get OAuth Token ---
 async function getOAuthToken() {
   try {
     const formData = new URLSearchParams({
@@ -1868,7 +1442,6 @@ async function getOAuthToken() {
       formData.toString(),
       { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
     );
-
     return response.data.access_token;
   } catch (err) {
     console.error("Error getting OAuth token:", err.response?.data || err.message);
@@ -1876,32 +1449,30 @@ async function getOAuthToken() {
   }
 }
 
-// --- Create Payment Order ---
 app.post("/api/payment/create-order", async (req, res) => {
   try {
-    const { merchantOrderId, amount } = req.body;
-    if (!merchantOrderId || !amount) {
+   const { merchantOrderId, amount, userId, bookingdtlsId, busBookingSeatId } = req.body;
+
+
+    if (!merchantOrderId || !amount)
       return res.status(400).json({ error: "merchantOrderId and amount are required" });
-    }
 
     const token = await getOAuthToken();
-    if (!token) return res.status(500).json({ error: "Failed to get OAuth token" });
+    if (!token)
+      return res.status(500).json({ error: "Failed to get OAuth token" });
 
     const requestBody = {
       merchantOrderId,
-      amount: parseInt(amount), // amount in paise
+      amount: parseInt(amount),
       expireAfter: 1200,
-      metaInfo: {},
       paymentFlow: {
         type: "PG_CHECKOUT",
-        message: "Payment for testing",
-        // merchantUrls: { redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback` },
-        merchantUrls: { 
-      redirectUrl: `http://localhost:5000/payment-result?orderId=${merchantOrderId}` 
-    },
-        paymentModeConfig: {
-          enabledPaymentModes: [],
-          disabledPaymentModes: [],
+        message: "Payment for Tirupati Package",
+        merchantUrls: {
+          // ✅ Include IDs in callback URL
+        //  redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
+
+         redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
         },
       },
     };
@@ -1909,7 +1480,12 @@ app.post("/api/payment/create-order", async (req, res) => {
     const response = await axios.post(
       `${SANDBOX_BASE_URL}/checkout/v2/pay`,
       requestBody,
-      { headers: { Authorization: `O-Bearer ${token}`, "Content-Type": "application/json" } }
+      {
+        headers: {
+          Authorization: `O-Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
     );
 
     res.json({ orderId: merchantOrderId, phonepeResponse: response.data });
@@ -1919,42 +1495,32 @@ app.post("/api/payment/create-order", async (req, res) => {
   }
 });
 
-// --- Callback Endpoint ---
-
-
-
-
-
-app.post("/api/payment/callback", async (req, res) => {
-  console.log("📩 PhonePe Callback received:", req.body);
-
-  const data = req.body;
-
+// ---------------------------------------------
+// ✅ CALLBACK AFTER PAYMENT SUCCESS
+// ---------------------------------------------
+app.get("/api/payment/callback", async (req, res) => {
   try {
-    // Direct connection using dbConfig
-    const pool = await sql.connect(dbConfig);
+    const { orderId, amount, userId, bookingdtlsId,busBookingSeatId } = req.query;
+console.log("🔄 CALLBACK PARAMS:", req.query); 
+    // ✅ Auto-call your success API to record payment
+    await axios.post("https://api.tirupatipackagetours.com/api/success", {
+      UserID: userId,
+      BookingdtlsID: bookingdtlsId,
+     BusBookingSeatID: busBookingSeatId,
+      Amount: amount / 100,
+      PaymentMode: "PhonePe",
+      TransactionID: orderId,
+      PaymentStatus: "Success",
+      TransactionCode: "00",
+      TransactionResponse: "Payment successful via PhonePe",
+      CreatedBy: userId || 1,
+    });
 
-    await pool.request()
-      .input("Flag", sql.Char(1), "I")
-      .input("PaymentID", sql.Int, 0)
-      .input("UserID", sql.Int, data.userId || null)
-      .input("BookingdtlsID", sql.Int, data.bookingId || null)
-      .input("Amount", sql.Int, data.amount || 0)
-      .input("PaymentMode", sql.VarChar(50), "PhonePe")
-      .input("TransactionID", sql.VarChar(sql.MAX), data.transactionId || null)
-      .input("TransactionResponse", sql.VarChar(sql.MAX), JSON.stringify(data))
-      .input("TransactionCode", sql.VarChar(50), data.status || null)
-      .input("PaymentStatus", sql.VarChar(50), data.status || "FAILED")
-      .input("ErrorCode", sql.VarChar(500), data.errorCode || null)
-      .input("CreatedBy", sql.Int, data.userId || 1)
-      .execute("sp_Payment");
-
-    res.sendStatus(200); // Acknowledge PhonePe immediately
+    // ✅ Redirect user to frontend success page
+    res.redirect(`https://api.tirupatipackagetours.com/payment-success?orderId=${orderId}`);
   } catch (err) {
-    console.error("❌ Error inserting payment:", err);
-    res.sendStatus(500);
-  } finally {
-    sql.close(); // Close connection after use
+    console.error("❌ Payment callback error:", err);
+    res.redirect(`https://api.tirupatipackagetours.com/payment-failed`);
   }
 });
 
@@ -2031,7 +1597,83 @@ app.get("/api/bus/droppingPoints/:busId", async (req, res) => {
 });
 
 
+//////////////////////////////
 
+// app.post("/api/success", async (req, res) => {
+//   try {
+//     const {
+//       UserID,
+//       BookingdtlsID,
+//       Amount,
+//       PaymentMode,
+//       TransactionID,
+//       TransactionResponse,
+//       TransactionCode,
+//       PaymentStatus,
+//       ErrorCode,
+//       CreatedBy,
+//       orderId,
+//       transactionId,
+//       status,
+//       code,
+//     } = req.body;
+
+//     // ✅ Normalize & fallback handling
+//     const normalizedAmount = parseInt(Amount || req.body.amount || 0);
+//     const normalizedTxnId = TransactionID || transactionId || orderId || null;
+//     const normalizedStatus = PaymentStatus || status || "Success";
+//     const normalizedCode = TransactionCode || code || "00";
+//     const normalizedResponse = TransactionResponse
+//       ? TransactionResponse
+//       : JSON.stringify(req.body);
+
+//     // ✅ Basic validation
+//     if (!normalizedAmount || !normalizedTxnId) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Amount and TransactionID are required" });
+//     }
+
+//     // ✅ Connect to SQL Server
+//     const pool = await sql.connect(dbConfig);
+//     const request = pool.request();
+
+//     // ✅ Input parameters for stored procedure
+//     request.input("Flag", sql.Char(1), "I");
+//     request.input("PaymentID", sql.Int, 0);
+//     request.input("UserID", sql.Int, UserID ?? null);
+//     request.input("BookingdtlsID", sql.Int, BookingdtlsID ?? null);
+//     request.input("Amount", sql.Int, normalizedAmount);
+//     request.input("PaymentMode", sql.VarChar(50), PaymentMode ?? "PhonePe");
+//     request.input("TransactionID", sql.VarChar(sql.MAX), normalizedTxnId);
+//     request.input("TransactionResponse", sql.VarChar(sql.MAX), normalizedResponse);
+//     request.input("TransactionCode", sql.VarChar(50), normalizedCode);
+//     request.input("PaymentStatus", sql.VarChar(50), normalizedStatus);
+//     request.input("ErrorCode", sql.VarChar(500), ErrorCode ?? null);
+//     request.input("CreatedBy", sql.Int, CreatedBy ?? 1);
+
+//     // ✅ Execute your stored procedure
+//     await request.execute("dbo.sp_Payment");
+
+//     console.log("✅ Payment recorded successfully:", normalizedTxnId);
+
+//     // ✅ Return success
+//     res.status(201).json({
+//       success: true,
+//       message: "✅ Payment recorded successfully in database",
+//     });
+//   } catch (err) {
+//     console.error("❌ Error saving payment:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to record payment",
+//       error: err.message,
+//     });
+//   }
+// });
+
+
+/////////////////////////////
 
 /////////////////////////////////////////
 
