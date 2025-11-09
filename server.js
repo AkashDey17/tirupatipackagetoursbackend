@@ -1472,7 +1472,7 @@ app.post("/api/payment/create-order", async (req, res) => {
           // ✅ Include IDs in callback URL
         //  redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
 
-         redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
+         redirectUrl: `https://www.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
         },
       },
     };
@@ -1503,7 +1503,7 @@ app.get("/api/payment/callback", async (req, res) => {
     const { orderId, amount, userId, bookingdtlsId,busBookingSeatId } = req.query;
 console.log("🔄 CALLBACK PARAMS:", req.query); 
     // ✅ Auto-call your success API to record payment
-    await axios.post("https://api.tirupatipackagetours.com/api/success", {
+    await axios.post("https://www.tirupatipackagetours.com/api/success", {
       UserID: userId,
       BookingdtlsID: bookingdtlsId,
      BusBookingSeatID: busBookingSeatId,
@@ -1517,10 +1517,10 @@ console.log("🔄 CALLBACK PARAMS:", req.query);
     });
 
     // ✅ Redirect user to frontend success page
-    res.redirect(`https://api.tirupatipackagetours.com/payment-result?orderId=${orderId}`);
+    res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}`);
   } catch (err) {
     console.error("❌ Payment callback error:", err);
-    res.redirect(`https://api.tirupatipackagetours.com/payment-failed`);
+    res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
   }
 });
 
