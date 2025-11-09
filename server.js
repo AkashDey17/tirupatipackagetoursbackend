@@ -1503,7 +1503,7 @@ app.get("/api/payment/callback", async (req, res) => {
     const { orderId, amount, userId, bookingdtlsId,busBookingSeatId } = req.query;
 console.log("🔄 CALLBACK PARAMS:", req.query); 
     // ✅ Auto-call your success API to record payment
-    await axios.post("https://www.tirupatipackagetours.com/api/success", {
+    await axios.post("https://api.tirupatipackagetours.com/api/success", {
       UserID: userId,
       BookingdtlsID: bookingdtlsId,
      BusBookingSeatID: busBookingSeatId,
