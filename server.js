@@ -989,23 +989,135 @@ WHERE bbd.BusBookingDetailID = @BusId;
     res.status(500).json({ success: false, error: error.message });
   }
 });
+////////////////////////////////
+// app.post("/api/bus-booking-seat", async (req, res) => {
+//   try {
+//     const payload = req.body;
 
+//     // Validate JourneyDate
+//     if (!payload.JourneyDate) {
+//       return res.status(400).json({ success: false, message: "JourneyDate is required" });
+//     }
+
+//     const pool = await sql.connect(dbConfig);
+//     const proc = "dbo.sp_BusBookingSeat";
+//     const saveFlag = payload.SavePassengerDetails === "Y" ? "Yes" : "No";
+
+//     const seats = Array.isArray(payload.SeatNo) ? payload.SeatNo : [payload.SeatNo];
+
+//     //Date helper – trusts YYYY-MM-DD, avoids UTC conversion
+//     const safeDate = (date) => {
+//       if (!date) return null;
+//       if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+//         return date; // already normalized by frontend
+//       }
+//       const d = new Date(date);
+//       if (isNaN(d.getTime())) return null;
+//       const yyyy = d.getFullYear();
+//       const mm = String(d.getMonth() + 1).padStart(2, "0");
+//       const dd = String(d.getDate()).padStart(2, "0");
+//       return `${yyyy}-${mm}-${dd}`;
+//     };
+
+//     for (const seat of seats) {
+//       const request = pool.request();
+//       request.input("Flag", sql.Char(1), "I");
+//       request.input("BusBookingSeatID", sql.Int, payload.BusBookingSeatID ?? 0);
+//       request.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
+//       request.input("BusOperatorID", sql.Int, payload.BusOperatorID);
+
+//       //If user clicked NO (PassengerID = 0) → send NULL to DB
+//       request.input("UserID", sql.Int, payload.UserID === 0 ? null : payload.UserID);
+
+//       request.input("ForSelf", sql.Bit, payload.ForSelf ? 1 : 0);
+//       request.input("IsPrimary", sql.Int, payload.IsPrimary ?? 1);
+//       request.input("SeatNo", sql.NVarChar(50), seat);
+//       request.input("FirstName", sql.VarChar(250), payload.FirstName ?? null);
+//       request.input("MiddleName", sql.VarChar(250), payload.MiddleName ?? null);
+//       request.input("LastName", sql.VarChar(250), payload.LastName ?? null);
+//       request.input("Email", sql.VarChar(150), payload.Email ?? null);
+//       request.input("ContactNo", sql.VarChar(50), payload.ContactNo ?? null);
+//       request.input("Gender", sql.VarChar(50), payload.Gender ?? null);
+//       request.input("AadharNo", sql.VarChar(20), payload.AadharNo ?? null);
+//       request.input("PancardNo", sql.VarChar(20), payload.PancardNo ?? null);
+//       request.input("BloodGroup", sql.VarChar(10), payload.BloodGroup ?? null);
+//       request.input("DOB", sql.DateTime, safeDate(payload.DOB));
+//       request.input("FoodPref", sql.VarChar(100), payload.FoodPref ?? null);
+//       request.input("Disabled", sql.Bit, payload.Disabled ? 1 : 0);
+//       request.input("Pregnant", sql.Bit, payload.Pregnant ? 1 : 0);
+//       request.input("RegisteredCompanyNumber", sql.VarChar(50), payload.RegisteredCompanyNumber ?? null);
+//       request.input("RegisteredCompanyName", sql.VarChar(50), payload.RegisteredCompanyName ?? null);
+//       request.input("DrivingLicence", sql.VarChar(100), payload.DrivingLicence ?? null);
+//       request.input("PassportNo", sql.VarChar(100), payload.PassportNo ?? null);
+//       request.input("RationCard", sql.VarChar(100), payload.RationCard ?? null);
+//       request.input("VoterID", sql.VarChar(100), payload.VoterID ?? null);
+//       request.input("Others", sql.VarChar(500), payload.Others ?? null);
+//       request.input("NRI", sql.Bit, payload.NRI ? 1 : 0);
+//       request.input("CreatedBy", sql.Int, payload.CreatedBy ?? 1);
+//       request.input("SavePassengerDetails", sql.VarChar(50), saveFlag);
+
+      
+//       request.input("JourneyDate", sql.Date, payload.JourneyDate);
+
+//       await request.execute(proc);
+
+//       // ==========================================================
+//       // ✅ NEW ADDITION: Manage SeatLock table & Booking Status by JourneyDate
+//       // ==========================================================
+
+//       // 1️⃣ Remove temporary lock for this seat on the same journey date
+//       const unlockRequest = pool.request();
+//       unlockRequest.input("BusOperatorID", sql.Int, payload.BusOperatorID);
+//       unlockRequest.input("SeatNo", sql.VarChar(50), seat);
+//       unlockRequest.input("JourneyDate", sql.Date, payload.JourneyDate);
+//       await unlockRequest.query(`
+//         DELETE FROM SeatLock
+//         WHERE BusOperatorID = @BusOperatorID
+//           AND SeatNo = @SeatNo
+//           AND CAST(JourneyDate AS DATE) = @JourneyDate
+//       `);
+
+//       // 2️⃣ Update booking status to "Booked" and mark PaymentStatus as "Pending" for this date
+//       const updateRequest = pool.request();
+//       updateRequest.input("BusOperatorID", sql.Int, payload.BusOperatorID);
+//       updateRequest.input("SeatNo", sql.VarChar(50), seat);
+//       updateRequest.input("JourneyDate", sql.Date, payload.JourneyDate);
+//       await updateRequest.query(`
+//         UPDATE BusBookingSeat
+//         SET Status = 'Booked',
+//             PaymentStatus = 'Pending',
+//             LockStatus = 'Unlocked'
+//         WHERE BusOperatorID = @BusOperatorID
+//           AND SeatNo = @SeatNo
+//           AND CAST(JourneyDate AS DATE) = @JourneyDate
+//       `);
+//     }
+
+//     res.status(201).json({ message: "✅ Booking saved successfully for given JourneyDate" });
+//   } catch (err) {
+//     console.error("❌ SQL INSERT error:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+//////////////////////////////////////
 app.post("/api/bus-booking-seat", async (req, res) => {
   try {
     const payload = req.body;
 
     // Validate JourneyDate
     if (!payload.JourneyDate) {
-      return res.status(400).json({ success: false, message: "JourneyDate is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "JourneyDate is required" });
     }
 
-    const pool = await sql.connect(dbConfig);
+    const pool = await sql.connect(connectionString);
     const proc = "dbo.sp_BusBookingSeat";
     const saveFlag = payload.SavePassengerDetails === "Y" ? "Yes" : "No";
 
     const seats = Array.isArray(payload.SeatNo) ? payload.SeatNo : [payload.SeatNo];
 
-    //Date helper – trusts YYYY-MM-DD, avoids UTC conversion
+    // ✅ Helper to normalize date
     const safeDate = (date) => {
       if (!date) return null;
       if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -1019,8 +1131,14 @@ app.post("/api/bus-booking-seat", async (req, res) => {
       return `${yyyy}-${mm}-${dd}`;
     };
 
+    // ============================================
+    // ✅ Insert for each seat
+    // ============================================
+    let lastInsertedSeatId = null;
+
     for (const seat of seats) {
       const request = pool.request();
+
       request.input("Flag", sql.Char(1), "I");
       request.input("BusBookingSeatID", sql.Int, payload.BusBookingSeatID ?? 0);
       request.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
@@ -1055,17 +1173,20 @@ app.post("/api/bus-booking-seat", async (req, res) => {
       request.input("NRI", sql.Bit, payload.NRI ? 1 : 0);
       request.input("CreatedBy", sql.Int, payload.CreatedBy ?? 1);
       request.input("SavePassengerDetails", sql.VarChar(50), saveFlag);
-
-      
       request.input("JourneyDate", sql.Date, payload.JourneyDate);
 
-      await request.execute(proc);
+      // ✅ Execute stored procedure
+      const result = await request.execute(proc);
 
-      // ==========================================================
-      // ✅ NEW ADDITION: Manage SeatLock table & Booking Status by JourneyDate
-      // ==========================================================
+      // ✅ Capture BusBookingSeatID from SP result
+      const insertedId = result.recordset?.[0]?.BusBookingSeatID;
+      if (insertedId) lastInsertedSeatId = insertedId;
 
-      // 1️⃣ Remove temporary lock for this seat on the same journey date
+      // ============================================
+      // ✅ Manage Seat Lock table & update booking
+      // ============================================
+
+      // 1️⃣ Delete temporary lock for this seat and journey date
       const unlockRequest = pool.request();
       unlockRequest.input("BusOperatorID", sql.Int, payload.BusOperatorID);
       unlockRequest.input("SeatNo", sql.VarChar(50), seat);
@@ -1077,7 +1198,7 @@ app.post("/api/bus-booking-seat", async (req, res) => {
           AND CAST(JourneyDate AS DATE) = @JourneyDate
       `);
 
-      // 2️⃣ Update booking status to "Booked" and mark PaymentStatus as "Pending" for this date
+      // 2️⃣ Update seat booking status to "Booked"
       const updateRequest = pool.request();
       updateRequest.input("BusOperatorID", sql.Int, payload.BusOperatorID);
       updateRequest.input("SeatNo", sql.VarChar(50), seat);
@@ -1093,10 +1214,19 @@ app.post("/api/bus-booking-seat", async (req, res) => {
       `);
     }
 
-    res.status(201).json({ message: "✅ Booking saved successfully for given JourneyDate" });
+    // ============================================
+    // ✅ Final Response to Frontend
+    // ============================================
+    res.status(201).json({
+      success: true,
+      message: "✅ Booking saved successfully for given JourneyDate",
+      BusBookingSeatID: lastInsertedSeatId,
+    });
+       console.log("🚀 BusBookingSeatID", { lastInsertedSeatId });
+
   } catch (err) {
     console.error("❌ SQL INSERT error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 // ------------------- USER SIGNUP & LOGIN -------------------
