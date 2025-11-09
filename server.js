@@ -1472,7 +1472,7 @@ app.post("/api/payment/create-order", async (req, res) => {
           // ✅ Include IDs in callback URL
         //  redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
 
-         redirectUrl: `https://www.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
+         redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
         },
       },
     };
