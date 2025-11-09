@@ -1111,7 +1111,7 @@ app.post("/api/bus-booking-seat", async (req, res) => {
         .json({ success: false, message: "JourneyDate is required" });
     }
 
-    const pool = await sql.connect(connectionString);
+    const pool = await sql.connect(dbConfig);
     const proc = "dbo.sp_BusBookingSeat";
     const saveFlag = payload.SavePassengerDetails === "Y" ? "Yes" : "No";
 
