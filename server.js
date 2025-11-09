@@ -594,40 +594,40 @@ const PORT = process.env.PORT || 5000;
 
 
 
-const dbConfig = {
-  user: "sqladmin",
-  password: "Sanchar6t1",
-  server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com",
-  port: 1433,
-  database: "Sanchar6T_Dev",
-  options: {
-    encrypt: true,
-    trustServerCertificate: true,
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
-};
-
-
 // const dbConfig = {
-//   user: process.env.DB_USER,       
-//   password: process.env.DB_PASSWORD,
-//   server: process.env.DB_SERVER,   
-//   port: parseInt(process.env.DB_PORT),  // <-- use port from .env
-//   database: process.env.DB_NAME,
+//   user: "sqladmin",
+//   password: "Sanchar6t1",
+//   server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com",
+//   port: 1433,
+//   database: "Sanchar6T_Dev",
 //   options: {
-//     encrypt: false,                // false for local dev
-//     trustServerCertificate: true
+//     encrypt: true,
+//     trustServerCertificate: true,
 //   },
 //   pool: {
 //     max: 10,
 //     min: 0,
-//     idleTimeoutMillis: 30000
-//   }
+//     idleTimeoutMillis: 30000,
+//   },
 // };
+
+
+const dbConfig = {
+  user: process.env.DB_USER,       
+  password: process.env.DB_PASSWORD,
+  server: process.env.DB_SERVER,   
+  port: parseInt(process.env.DB_PORT),  // <-- use port from .env
+  database: process.env.DB_NAME,
+  options: {
+    encrypt: false,                // false for local dev
+    trustServerCertificate: true
+  },
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000
+  }
+};
 
 
 
@@ -1600,9 +1600,11 @@ app.post("/api/payment/create-order", async (req, res) => {
         message: "Payment for Tirupati Package",
         merchantUrls: {
           // ✅ Include IDs in callback URL
-        //  redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
+        
 
          redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
+                // redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
+
         },
       },
     };
@@ -1633,7 +1635,8 @@ app.get("/api/payment/callback", async (req, res) => {
     const { orderId, amount, userId, bookingdtlsId,busBookingSeatId } = req.query;
 console.log("🔄 CALLBACK PARAMS:", req.query); 
     // ✅ Auto-call your success API to record payment
-    await axios.post("https://api.tirupatipackagetours.com/api/success", {
+     await axios.post("https://api.tirupatipackagetours.com/api/success", {
+    // await axios.post("http://localhost:5000/api/success", {
       UserID: userId,
       BookingdtlsID: bookingdtlsId,
      BusBookingSeatID: busBookingSeatId,
@@ -1647,10 +1650,13 @@ console.log("🔄 CALLBACK PARAMS:", req.query);
     });
 
     // ✅ Redirect user to frontend success page
-    res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}`);
+     res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}`);
+       // res.redirect(`http://localhost:8080/payment-result?orderId=${orderId}`);
+
   } catch (err) {
     console.error("❌ Payment callback error:", err);
-    res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
+     res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
+   // res.redirect(`http://localhost:8080/payment-failed`);
   }
 });
 
