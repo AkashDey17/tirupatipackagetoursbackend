@@ -1517,7 +1517,7 @@ console.log("🔄 CALLBACK PARAMS:", req.query);
     });
 
     // ✅ Redirect user to frontend success page
-    res.redirect(`https://api.tirupatipackagetours.com/payment-success?orderId=${orderId}`);
+    res.redirect(`https://api.tirupatipackagetours.com/payment-result?orderId=${orderId}`);
   } catch (err) {
     console.error("❌ Payment callback error:", err);
     res.redirect(`https://api.tirupatipackagetours.com/payment-failed`);
