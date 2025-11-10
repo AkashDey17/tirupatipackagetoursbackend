@@ -1659,7 +1659,7 @@ console.log("🔄 CALLBACK PARAMS:", req.query);
   } catch (err) {
     console.error("❌ Payment callback error:", err);
     res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
-   // res.redirect(`http://localhost:8080/payment-failed`);
+  //  res.redirect(`http://localhost:8080/payment-failed`);
   }
 });
 
