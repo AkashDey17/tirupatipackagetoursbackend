@@ -1603,8 +1603,8 @@ app.post("/api/payment/create-order", async (req, res) => {
           // ✅ Include IDs in callback URL
         
 
-         redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
-             //    redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
+        redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
+               //  redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}`,
 
         },
       },
@@ -1628,6 +1628,8 @@ app.post("/api/payment/create-order", async (req, res) => {
   }
 });
 
+
+
 // ---------------------------------------------
 // ✅ CALLBACK AFTER PAYMENT SUCCESS
 // ---------------------------------------------
@@ -1637,7 +1639,7 @@ app.get("/api/payment/callback", async (req, res) => {
 console.log("🔄 CALLBACK PARAMS:", req.query); 
     // ✅ Auto-call your success API to record payment
      await axios.post("https://api.tirupatipackagetours.com/api/success", {
-   //  await axios.post("http://localhost:5000/api/success", {
+    // await axios.post("http://localhost:5000/api/success", {
       UserID: userId,
       BookingdtlsID: bookingdtlsId,
      BusBookingSeatID: busBookingSeatId,
@@ -1652,11 +1654,11 @@ console.log("🔄 CALLBACK PARAMS:", req.query);
 
     // ✅ Redirect user to frontend success page
      res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}`);
-      // res.redirect(`http://localhost:8080/payment-result?orderId=${orderId}`);
+     //  res.redirect(`http://localhost:8080/payment-result?orderId=${orderId}`);
 
   } catch (err) {
     console.error("❌ Payment callback error:", err);
-     res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
+    res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
    // res.redirect(`http://localhost:8080/payment-failed`);
   }
 });
