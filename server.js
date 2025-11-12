@@ -1,12 +1,10 @@
-
 //////////////////////////////////////////////////
-
-
 const express = require("express");
 const sql = require("mssql");
 const moment = require("moment-timezone");
  const cors = require("cors");
 const axios = require("axios");
+const pdf = require("html-pdf-node");
 
  const nodemailer = require("nodemailer");
  const bcrypt = require("bcryptjs");
@@ -58,6 +56,7 @@ const dbConfig = {
 //     idleTimeoutMillis: 30000
 //   }
 // };
+
 
 
 
@@ -1026,7 +1025,7 @@ app.post("/api/payment/create-order", async (req, res) => {
         
 
          redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
-           // redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
+        //   redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
                   
 
         },
@@ -1081,7 +1080,7 @@ app.get("/api/payment/callback", async (req, res) => {
 
     // ✅ 2️⃣ Redirect user to success page
        res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}`);
-   // res.redirect(`http://localhost:8080/payment-result?orderId=${orderId}`);
+    //res.redirect(`http://localhost:8080/payment-result?orderId=${orderId}`);
   } catch (err) {
     console.error("❌ Payment callback error:", err);
 
@@ -1123,7 +1122,7 @@ app.get("/api/payment/callback", async (req, res) => {
 
     // ✅ 5️⃣ Redirect user to frontend failure page
     res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
-    //res.redirect(`http://localhost:8080/payment-failed`);
+   // res.redirect(`http://localhost:8080/payment-failed`);
   }
 });
 
@@ -1315,13 +1314,79 @@ setInterval(async () => {
   }
 }, 10 * 60 * 1000);
 /////////////////////////////////////////
+app.post("/api/send-ticket", async (req, res) => {
+  try {
+    const { travellerData, contactData, gstData, totalPrice, tripData } = req.body;
+    const passenger = travellerData?.[0] || {};
 
+    // ✅ HTML for your ticket (you can make this look fancier later)
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+        <h2>eTicket Confirmation</h2>
+        <p><b>Passenger:</b> ${passenger.FirstName || ""} ${passenger.LastName || ""}</p>
+        <p><b>Bus Operator:</b> ${tripData?.operator || "N/A"}</p>
+        <p><b>Date of Travel:</b> ${tripData?.travelDate}</p>
+        <p><b>Seats:</b> ${travellerData.map(p => p.SeatNo || p.SeatNumber).join(", ")}</p>
+        <p><b>Amount Paid:</b> ₹${totalPrice}</p>
+        <p><b>Boarding Point:</b> ${tripData?.boardingPoint?.PointName || "N/A"}</p>
+        <p><b>Dropping Point:</b> ${tripData?.droppingPoint?.PointName || "N/A"}</p>
+        <hr/>
+        <p>Thank you for booking with <b>Tirupati Package Tours</b>.</p>
+      </div>
+    `;
+
+    // ✅ Create PDF buffer from HTML
+    const file = { content: htmlContent };
+    const pdfBuffer = await pdf.generatePdf(file, { format: "A4" });
+
+    // ✅ Setup GoDaddy SMTP
+    const transporter = nodemailer.createTransport({
+      host: "smtpout.secureserver.net",
+      port: 465,
+      secure: true,
+      auth: {
+        user: "enquiry@tirupatipackagetours.com",
+        pass: "Nagesh1987@", // ideally move to .env
+      },
+    });
+
+    // ✅ Email details
+    const mailOptions = {
+      from: `"Tirupati Package Tours" <enquiry@tirupatipackagetours.com>`,
+      to: contactData?.Email,
+      subject: `Your eTicket - ${tripData?.operator || "Bus Trip"} (${tripData?.travelDate})`,
+      html: `
+        <p>Dear ${passenger.FirstName || "Passenger"},</p>
+        <p>Thank you for booking with Tirupati Package Tours.</p>
+        <p>Please find your eTicket attached.</p>
+        <br/>
+        <p>Have a safe and blessed journey!</p>
+        <p>Warm regards,<br/>
+        <b>Tirupati Package Tours</b><br/>
+        Ph: +91 9731312275 / +91 8197882511</p>
+      `,
+      attachments: [
+        {
+          filename: `eTicket_${passenger.FirstName || "Passenger"}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    };
+
+    // ✅ Send email
+    await transporter.sendMail(mailOptions);
+
+    res.json({ success: true, message: "Ticket email sent successfully!" });
+  } catch (error) {
+    console.error("❌ Error sending ticket email:", error);
+    res.status(500).json({ success: false, message: "Failed to send ticket email", error: error.message });
+  }
+});
 // ✅ Start the server
 app.listen(PORT,"0.0.0.0", () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
-
-
 
 /////////////////////////////////////////////////////////////////////
 
