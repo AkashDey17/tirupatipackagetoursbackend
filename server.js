@@ -5,6 +5,8 @@ const moment = require("moment-timezone");
  const cors = require("cors");
 const axios = require("axios");
 //const pdf = require("html-pdf-node");
+const puppeteer = require("puppeteer");
+const path = require("path");
 
  const nodemailer = require("nodemailer");
  const bcrypt = require("bcryptjs");
@@ -18,7 +20,7 @@ app.use(
     origin: [
       "https://www.tirupatipackagetours.com",
       "https://tirupatipackagetours.com",
-      "http://localhost:3000"
+      "http://localhost:8080"
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -731,7 +733,7 @@ app.post("/api/user/get-or-create", async (req, res) => {
       .query(`
         INSERT INTO [User] (UserType, Status, CreatedBy, CreatedDt)
         OUTPUT INSERTED.UserID
-        VALUES (1, 1, 1, GETDATE())
+        VALUES (2, 1, 1, GETDATE())
       `);
 
     const newUserId = newUser.recordset[0].UserID;
@@ -1037,7 +1039,7 @@ app.post("/api/payment/create-order", async (req, res) => {
         
 
          redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
-        //   redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
+          // redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
                   
 
         },
@@ -1092,7 +1094,7 @@ app.get("/api/payment/callback", async (req, res) => {
 
     // ✅ 2️⃣ Redirect user to success page
        res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}`);
-    //res.redirect(`http://localhost:8080/payment-result?orderId=${orderId}`);
+   // res.redirect(`http://localhost:8080/payment-result?orderId=${orderId}`);
   } catch (err) {
     console.error("❌ Payment callback error:", err);
 
@@ -1326,75 +1328,109 @@ setInterval(async () => {
   }
 }, 10 * 60 * 1000);
 /////////////////////////////////////////
-// app.post("/api/send-ticket", async (req, res) => {
-//   try {
-//     const { travellerData, contactData, gstData, totalPrice, tripData } = req.body;
-//     const passenger = travellerData?.[0] || {};
+app.post("/api/send-ticket", async (req, res) => {
+  try {
+    const { travellerData, contactData, gstData, totalPrice, tripData } = req.body;
+    const passenger = travellerData?.[0] || {};
 
-//     // ✅ HTML for your ticket (you can make this look fancier later)
-//     const htmlContent = `
-//       <div style="font-family: Arial, sans-serif; line-height: 1.5;">
-//         <h2>eTicket Confirmation</h2>
-//         <p><b>Passenger:</b> ${passenger.FirstName || ""} ${passenger.LastName || ""}</p>
-//         <p><b>Bus Operator:</b> ${tripData?.operator || "N/A"}</p>
-//         <p><b>Date of Travel:</b> ${tripData?.travelDate}</p>
-//         <p><b>Seats:</b> ${travellerData.map(p => p.SeatNo || p.SeatNumber).join(", ")}</p>
-//         <p><b>Amount Paid:</b> ₹${totalPrice}</p>
-//         <p><b>Boarding Point:</b> ${tripData?.boardingPoint?.PointName || "N/A"}</p>
-//         <p><b>Dropping Point:</b> ${tripData?.droppingPoint?.PointName || "N/A"}</p>
-//         <hr/>
-//         <p>Thank you for booking with <b>Tirupati Package Tours</b>.</p>
-//       </div>
-//     `;
+    // ✅ HTML template for ticket
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; padding: 20px;">
+        <h2 style="color: #2b3e50;">eTicket Confirmation</h2>
+        <p><b>Passenger:</b> ${passenger.FirstName || ""} ${passenger.LastName || ""}</p>
+        <p><b>Bus Operator:</b> ${tripData?.operator || "N/A"}</p>
+        <p><b>Date of Travel:</b> ${tripData?.travelDate}</p>
+        <p><b>Seats:</b> ${travellerData.map(p => p.SeatNo || p.SeatNumber).join(", ")}</p>
+        <p><b>Amount Paid:</b> ₹${totalPrice}</p>
+        <p><b>Boarding Point:</b> ${tripData?.boardingPoint?.PointName || "N/A"}</p>
+        <p><b>Dropping Point:</b> ${tripData?.droppingPoint?.PointName || "N/A"}</p>
+        <hr/>
+        <p>Thank you for booking with <b>Tirupati Package Tours</b>.</p>
+      </div>
+    `;
 
-//     // ✅ Create PDF buffer from HTML
-//     const file = { content: htmlContent };
-//     const pdfBuffer = await pdf.generatePdf(file, { format: "A4" });
+    // ✅ Generate PDF using Puppeteer
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"], // important for EB
+    });
+    const page = await browser.newPage();
+    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+    const pdfBuffer = await page.pdf({ format: "A4" });
+    await browser.close();
 
-//     // ✅ Setup GoDaddy SMTP
-//     const transporter = nodemailer.createTransport({
-//       host: "smtpout.secureserver.net",
-//       port: 465,
-//       secure: true,
-//       auth: {
-//         user: "enquiry@tirupatipackagetours.com",
-//         pass: "Nagesh1987@", // ideally move to .env
-//       },
-//     });
+    // ✅ Setup GoDaddy SMTP
+    const transporter = nodemailer.createTransport({
+      host: "smtpout.secureserver.net",
+      port: 465,
+      secure: true,
+      auth: {
+        user: "enquiry@tirupatipackagetours.com",
+        pass: "Nagesh1987@", // ⚠ move this to .env
+      },
+    });
 
-//     // ✅ Email details
-//     const mailOptions = {
-//       from: `"Tirupati Package Tours" <enquiry@tirupatipackagetours.com>`,
-//       to: contactData?.Email,
-//       subject: `Your eTicket - ${tripData?.operator || "Bus Trip"} (${tripData?.travelDate})`,
-//       html: `
-//         <p>Dear ${passenger.FirstName || "Passenger"},</p>
-//         <p>Thank you for booking with Tirupati Package Tours.</p>
-//         <p>Please find your eTicket attached.</p>
-//         <br/>
-//         <p>Have a safe and blessed journey!</p>
-//         <p>Warm regards,<br/>
-//         <b>Tirupati Package Tours</b><br/>
-//         Ph: +91 9731312275 / +91 8197882511</p>
-//       `,
-//       attachments: [
-//         {
-//           filename: `eTicket_${passenger.FirstName || "Passenger"}.pdf`,
-//           content: pdfBuffer,
-//           contentType: "application/pdf",
-//         },
-//       ],
-//     };
+    // ✅ Send the email with the PDF attachment
+    const mailOptions = {
+      from: `"Tirupati Package Tours" <enquiry@tirupatipackagetours.com>`,
+      to: contactData?.Email,
+      subject: `Your eTicket - ${tripData?.operator || "Bus Trip"} (${tripData?.travelDate})`,
+      html: `
+        <p>Dear ${passenger.FirstName || "Passenger"},</p>
+        <p>Thank you for booking with Tirupati Package Tours.</p>
+        <p>Please find your eTicket attached below.</p>
+        <br/>
+        <p>Have a safe and blessed journey!</p>
+        <p>Warm regards,<br/>
+        <b>Tirupati Package Tours</b><br/>
+        Ph: +91 9731312275 / +91 8197882511</p>
+      `,
+      attachments: [
+        {
+          filename: `eTicket_${passenger.FirstName || "Passenger"}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    };
 
-//     // ✅ Send email
-//     await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
 
-//     res.json({ success: true, message: "Ticket email sent successfully!" });
-//   } catch (error) {
-//     console.error("❌ Error sending ticket email:", error);
-//     res.status(500).json({ success: false, message: "Failed to send ticket email", error: error.message });
-//   }
-// });
+    res.json({ success: true, message: "Ticket email sent successfully!" });
+  } catch (error) {
+    console.error("❌ Error sending ticket email:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to send ticket email",
+      error: error.message,
+    });
+  }
+});
+
+
+// AUTO-ARCHIVE JOB FOR OLD BUS BOOKING RECORDS (using stored procedure)
+// ---------------------------------------------------
+
+// Runs every 6 hours (adjust as needed)
+const ARCHIVE_INTERVAL_HOURS = 24;
+
+setInterval(async () => {
+  console.log("🕐 Running archive stored procedure:", new Date().toISOString());
+
+  try {
+    const pool = await sql.connect(dbConfig);
+
+    // Execute the stored procedure in SQL Server
+    await pool.request().execute("sp_ArchiveOldBusBookingSeats");
+
+    console.log("Archive stored procedure executed successfully!");
+  } catch (err) {
+    console.error("Archive stored procedure failed:", err.message);
+  } finally {
+    // 🧹 Always close the SQL connection (only if you're not using a global pool)
+    await sql.close();
+  }
+}, ARCHIVE_INTERVAL_HOURS * 60 * 60 * 1000); // every 6 hours
 // ✅ Start the server
 app.listen(PORT,"0.0.0.0", () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
