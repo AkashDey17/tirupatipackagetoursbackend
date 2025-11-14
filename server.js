@@ -7,6 +7,7 @@ const axios = require("axios");
 //const pdf = require("html-pdf-node");
 const puppeteer = require("puppeteer-core");
 const path = require("path");
+const chromium = require("@sparticuz/chromium");
 
  const nodemailer = require("nodemailer");
  const bcrypt = require("bcryptjs");
@@ -1348,15 +1349,14 @@ setInterval(async () => {
 }, 10 * 60 * 1000);
 /////////////////////////////////////////
 // HARD CODED CHROMIUM PATH (Linux servers)
-const CHROME_PATH = "/usr/bin/chromium-browser"; 
-// Alternative: "/usr/bin/chromium"
-
 app.post("/api/send-ticket", async (req, res) => {
   try {
     const { travellerData, contactData, totalPrice, tripData } = req.body;
     const passenger = travellerData?.[0] || {};
 
-    // ================= PDF HTML TEMPLATE ==================
+    // ------------------------------
+    // HTML TO CONVERT INTO PDF
+    // ------------------------------
     const htmlContent = `
     <div style="font-family: Arial; padding: 20px; line-height: 1.5;">
       <h2 style="color: #2b3e50;">eTicket Confirmation</h2>
@@ -1374,30 +1374,34 @@ app.post("/api/send-ticket", async (req, res) => {
       <p>Thank you for booking with <b>Tirupati Package Tours</b>.</p>
     </div>
     `;
-    // ======================================================
 
-    // ======= PUPPETEER (using puppeteer-core) =============
+    // ------------------------------
+    // PUPPETEER-CORE + CHROMIUM
+    // ------------------------------
     const browser = await puppeteer.launch({
-      headless: true,
-      executablePath: CHROME_PATH,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
     });
 
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: "networkidle0" });
 
     const pdfBuffer = await page.pdf({ format: "A4" });
-    await browser.close();
-    // =======================================================
 
-    // ========== HARDCODED SMTP DETAILS =====================
+    await browser.close();
+
+    // ------------------------------
+    // EMAIL SENDING
+    // ------------------------------
     const transporter = nodemailer.createTransport({
       host: "smtpout.secureserver.net",
       port: 465,
       secure: true,
       auth: {
-        user: "enquiry@tirupatipackagetours.com",  // 🔥 HARD CODED
-        pass: "Nagesh1987@",                       // 🔥 HARD CODED
+        user: "enquiry@tirupatipackagetours.com",
+        pass: "Nagesh1987@",
       },
     });
 
@@ -1409,7 +1413,6 @@ app.post("/api/send-ticket", async (req, res) => {
         <p>Dear ${passenger.FirstName || "Passenger"},</p>
         <p>Thank you for booking with Tirupati Package Tours.</p>
         <p>Your eTicket is attached below.</p>
-
         <br/>
         <p>Warm regards,<br/>
         <b>Tirupati Package Tours</b><br/>
@@ -1425,9 +1428,9 @@ app.post("/api/send-ticket", async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    // =======================================================
 
     res.json({ success: true, message: "Ticket email sent successfully!" });
+
   } catch (error) {
     console.error("❌ SEND TICKET ERROR:", error);
 
@@ -1438,7 +1441,6 @@ app.post("/api/send-ticket", async (req, res) => {
     });
   }
 });
-
 
 
 
