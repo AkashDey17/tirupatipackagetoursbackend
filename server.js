@@ -29,6 +29,9 @@ app.use(
 );
 
 app.use(express.json());
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ limit: "20mb", extended: true }));
+
 
 
 const PORT = process.env.PORT || 5000;
@@ -1443,16 +1446,15 @@ setInterval(async () => {
 // });
 app.post("/api/send-ticket", async (req, res) => {
   try {
-    const { travellerData, contactData, totalPrice, tripData, pdfBase64 } = req.body;
+    const { travellerData, contactData, pdfBase64 } = req.body;
 
     if (!pdfBase64) {
       return res.status(400).json({ success: false, message: "PDF missing" });
     }
 
-    // Convert base64 to buffer
+    // Convert PDF Base64 to buffer
     const pdfBuffer = Buffer.from(pdfBase64.split(";base64,").pop(), "base64");
 
-    // Email transport
     const transporter = nodemailer.createTransport({
       host: "smtpout.secureserver.net",
       port: 465,
@@ -1463,37 +1465,27 @@ app.post("/api/send-ticket", async (req, res) => {
       },
     });
 
-    const passenger = travellerData?.[0] || {};
-
     await transporter.sendMail({
       from: `"Tirupati Package Tours" <enquiry@tirupatipackagetours.com>`,
       to: contactData.Email,
-      subject: `Your Tirupati Bus Ticket`,
-      html: `
-        <p>Dear ${passenger.FirstName || "Passenger"},</p>
-        <p>Your ticket is attached below.</p>
-        <p>Thank you for choosing Tirupati Package Tours.</p>
-      `,
+      subject: "Your Tirupati Ticket",
+      html: `<p>Your ticket is attached.</p>`,
       attachments: [
         {
-          filename: "eTicket.pdf",
+          filename: "ticket.pdf",
           content: pdfBuffer,
           contentType: "application/pdf",
         },
       ],
     });
 
-    res.json({ success: true, message: "Ticket email sent successfully!" });
-
-  } catch (error) {
-    console.error("Email error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to send email",
-      error: error.message,
-    });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("EMAIL ERROR:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 
 
