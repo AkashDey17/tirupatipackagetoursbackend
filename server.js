@@ -1347,49 +1347,60 @@ setInterval(async () => {
   }
 }, 10 * 60 * 1000);
 /////////////////////////////////////////
+// HARD CODED CHROMIUM PATH (Linux servers)
+const CHROME_PATH = "/usr/bin/chromium-browser"; 
+// Alternative: "/usr/bin/chromium"
+
 app.post("/api/send-ticket", async (req, res) => {
   try {
-    const { travellerData, contactData, gstData, totalPrice, tripData } = req.body;
+    const { travellerData, contactData, totalPrice, tripData } = req.body;
     const passenger = travellerData?.[0] || {};
 
-    // ✅ HTML template for ticket
+    // ================= PDF HTML TEMPLATE ==================
     const htmlContent = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.5; padding: 20px;">
-        <h2 style="color: #2b3e50;">eTicket Confirmation</h2>
-        <p><b>Passenger:</b> ${passenger.FirstName || ""} ${passenger.LastName || ""}</p>
-        <p><b>Bus Operator:</b> ${tripData?.operator || "N/A"}</p>
-        <p><b>Date of Travel:</b> ${tripData?.travelDate}</p>
-        <p><b>Seats:</b> ${travellerData.map(p => p.SeatNo || p.SeatNumber).join(", ")}</p>
-        <p><b>Amount Paid:</b> ₹${totalPrice}</p>
-        <p><b>Boarding Point:</b> ${tripData?.boardingPoint?.PointName || "N/A"}</p>
-        <p><b>Dropping Point:</b> ${tripData?.droppingPoint?.PointName || "N/A"}</p>
-        <hr/>
-        <p>Thank you for booking with <b>Tirupati Package Tours</b>.</p>
-      </div>
-    `;
+    <div style="font-family: Arial; padding: 20px; line-height: 1.5;">
+      <h2 style="color: #2b3e50;">eTicket Confirmation</h2>
 
-    // ✅ Generate PDF using Puppeteer
+      <p><b>Passenger:</b> ${passenger.FirstName || ""} ${passenger.LastName || ""}</p>
+      <p><b>Bus Operator:</b> ${tripData?.operator || "N/A"}</p>
+      <p><b>Date of Travel:</b> ${tripData?.travelDate}</p>
+      <p><b>Seats:</b> ${travellerData.map(p => p.SeatNo || p.SeatNumber).join(", ")}</p>
+      <p><b>Total Paid:</b> ₹${totalPrice}</p>
+
+      <p><b>Boarding:</b> ${tripData?.boardingPoint?.PointName || "N/A"}</p>
+      <p><b>Dropping:</b> ${tripData?.droppingPoint?.PointName || "N/A"}</p>
+
+      <hr/>
+      <p>Thank you for booking with <b>Tirupati Package Tours</b>.</p>
+    </div>
+    `;
+    // ======================================================
+
+    // ======= PUPPETEER (using puppeteer-core) =============
     const browser = await puppeteer.launch({
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"], // important for EB
+      executablePath: CHROME_PATH,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
+
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+
     const pdfBuffer = await page.pdf({ format: "A4" });
     await browser.close();
+    // =======================================================
 
-    // ✅ Setup GoDaddy SMTP
+    // ========== HARDCODED SMTP DETAILS =====================
     const transporter = nodemailer.createTransport({
       host: "smtpout.secureserver.net",
       port: 465,
       secure: true,
       auth: {
-        user: "enquiry@tirupatipackagetours.com",
-        pass: "Nagesh1987@", // ⚠ move this to .env
+        user: "enquiry@tirupatipackagetours.com",  // 🔥 HARD CODED
+        pass: "Nagesh1987@",                       // 🔥 HARD CODED
       },
     });
 
-    // ✅ Send the email with the PDF attachment
     const mailOptions = {
       from: `"Tirupati Package Tours" <enquiry@tirupatipackagetours.com>`,
       to: contactData?.Email,
@@ -1397,12 +1408,12 @@ app.post("/api/send-ticket", async (req, res) => {
       html: `
         <p>Dear ${passenger.FirstName || "Passenger"},</p>
         <p>Thank you for booking with Tirupati Package Tours.</p>
-        <p>Please find your eTicket attached below.</p>
+        <p>Your eTicket is attached below.</p>
+
         <br/>
-        <p>Have a safe and blessed journey!</p>
         <p>Warm regards,<br/>
         <b>Tirupati Package Tours</b><br/>
-        Ph: +91 9731312275 / +91 8197882511</p>
+        +91 9731312275 / +91 8197882511</p>
       `,
       attachments: [
         {
@@ -1414,10 +1425,12 @@ app.post("/api/send-ticket", async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
+    // =======================================================
 
     res.json({ success: true, message: "Ticket email sent successfully!" });
   } catch (error) {
-    console.error("❌ Error sending ticket email:", error);
+    console.error("❌ SEND TICKET ERROR:", error);
+
     res.status(500).json({
       success: false,
       message: "Failed to send ticket email",
