@@ -222,43 +222,68 @@ app.post("/api/bus-booking-details", async (req, res) => {
 });
 
 app.get("/api/bus-details", async (req, res) => {
-  try {
-    const { packageId } = req.query;
-    let pool = await sql.connect(dbConfig);
-    let request = pool.request();
+  try {  
+    const { packageId, journeyDate } = req.query;
 
-    // Base query
+    if (!journeyDate) {
+      return res.status(400).json({ error: "journeyDate is required" });
+    }
+
+    const pool = await sql.connect(dbConfig);
+    const request = pool.request();
+    request.input("journeyDate", sql.Date, journeyDate);
+
     let query = `
       SELECT 
-        b.[BusBooKingDetailID],
-        b.[OperatorID],
-        b.[PackageID],
-        b.[WkEndSeatPrice],
-        b.[WkDaySeatPrice],
-        b.[DepartureTime],
-        b.[Arrivaltime],
-        b.[Status],
-        b.[PackageName],
-        b.[BusNo],
-        b.[BusSeats],
-        b.[BusType],
-        b.[FemaleSeatNo],
-        a.[AMName]
-      FROM [dbo].[vw_BusBookingDetails] b
-      LEFT JOIN [dbo].[vw_BusAmenities] a ON b.OperatorID = a.BusOperatorID
-      LEFT JOIN [dbo].[vw_BusOperator] o ON b.OperatorID = o.BusOperatorID
-      WHERE o.[SourceSystem] = 'TirupatiPackage'
+        b.BusBooKingDetailID,
+        b.OperatorID,
+        b.PackageID,
+        b.DepartureTime,
+        b.Arrivaltime,
+        b.BusNo,
+        b.BusSeats,
+        b.BusType,
+
+        -- Calculate Final Price
+        ISNULL(
+          sp.SpecialPrice,  
+          CASE 
+            WHEN wc.DayName IS NOT NULL 
+              THEN pc.WeekendPrice
+            ELSE pc.WeekdayPrice
+          END
+        ) AS FinalSeatPrice,
+
+        a.AMName
+      FROM vw_BusBookingDetails b
+      LEFT JOIN BusPriceConfig pc 
+          ON b.BusBooKingDetailID = pc.BusBookingDetailID
+          AND pc.IsActive = 1
+
+      LEFT JOIN BusSpecialPrice sp 
+          ON b.BusBooKingDetailID = sp.BusBookingDetailID
+          AND sp.PriceDate = @journeyDate
+
+      LEFT JOIN WeekendConfig wc
+          ON wc.DayName = DATENAME(WEEKDAY, @journeyDate)
+
+      LEFT JOIN vw_BusAmenities a 
+          ON b.OperatorID = a.BusOperatorID
+
+      LEFT JOIN vw_BusOperator o 
+          ON b.OperatorID = o.BusOperatorID
+
+      WHERE 
+          o.SourceSystem = 'TirupatiPackage'
+          AND b.Status = 1  
     `;
 
-    // Optional filter
     if (packageId) {
-      query += " AND b.[PackageID] = @packageId";
+      query += " AND b.PackageID = @packageId";
       request.input("packageId", sql.Int, packageId);
     }
 
-    // Add ordering
     query += " ORDER BY b.DepartureTime";
-    console.log("Executing query:", query);
 
     const result = await request.query(query);
 
@@ -269,28 +294,22 @@ app.get("/api/bus-details", async (req, res) => {
           BusBooKingDetailID: row.BusBooKingDetailID,
           OperatorID: row.OperatorID,
           PackageID: row.PackageID,
-          WkEndSeatPrice: row.WkEndSeatPrice,
-          WkDaySeatPrice: row.WkDaySeatPrice,
-          DepartureTime: row.DepartureTime,
-          Arrivaltime: row.Arrivaltime,
-          Status: row.Status,
-          PackageName: row.PackageName,
           BusNo: row.BusNo,
           BusSeats: row.BusSeats,
           BusType: row.BusType,
-          FemaleSeatNo: row.FemaleSeatNo,
+          DepartureTime: row.DepartureTime,
+          Arrivaltime: row.Arrivaltime,
+          FinalSeatPrice: row.FinalSeatPrice,
           amenities: []
         };
       }
-      if (row.AMName) buses[row.BusBooKingDetailID].amenities.push(row.AMName);
+      if (row.AMName) {
+        buses[row.BusBooKingDetailID].amenities.push(row.AMName);
+      }
     });
 
-    // ✅ Maintain order by DepartureTime
-    const busArray = Object.values(buses).sort(
-      (a, b) => new Date(a.DepartureTime) - new Date(b.DepartureTime)
-    );
+    res.json(Object.values(buses));
 
-    res.json(busArray);
   } catch (err) {
     console.error("Error fetching bus details:", err);
     res.status(500).json({ error: "Server error fetching bus details" });
@@ -1039,7 +1058,7 @@ app.post("/api/payment/create-order", async (req, res) => {
         
 
          redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
-          // redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
+        //   redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
                   
 
         },
@@ -1078,7 +1097,7 @@ app.get("/api/payment/callback", async (req, res) => {
 
     // ✅ 1️⃣ Post to your success endpoint to record payment and update seats
        await axios.post("https://api.tirupatipackagetours.com/api/success", {
-   // await axios.post("http://localhost:5000/api/success", {
+  //  await axios.post("http://localhost:5000/api/success", {
       UserID: userId,
       BookingdtlsID: bookingdtlsId,
       BusBookingSeatID: busBookingSeatId,
@@ -1406,6 +1425,13 @@ app.post("/api/send-ticket", async (req, res) => {
     });
   }
 });
+
+
+
+
+
+
+
 
 
 // AUTO-ARCHIVE JOB FOR OLD BUS BOOKING RECORDS (using stored procedure)
