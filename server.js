@@ -5,7 +5,7 @@ const moment = require("moment-timezone");
  const cors = require("cors");
 const axios = require("axios");
 //const pdf = require("html-pdf-node");
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core");
 const path = require("path");
 
  const nodemailer = require("nodemailer");
