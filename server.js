@@ -1349,52 +1349,110 @@ setInterval(async () => {
 }, 10 * 60 * 1000);
 /////////////////////////////////////////
 // HARD CODED CHROMIUM PATH (Linux servers)
+// app.post("/api/send-ticket", async (req, res) => {
+//   try {
+//     const { travellerData, contactData, totalPrice, tripData } = req.body;
+//     const passenger = travellerData?.[0] || {};
+
+//     // ------------------------------
+//     // HTML TO CONVERT INTO PDF
+//     // ------------------------------
+//     const htmlContent = `
+//     <div style="font-family: Arial; padding: 20px; line-height: 1.5;">
+//       <h2 style="color: #2b3e50;">eTicket Confirmation</h2>
+
+//       <p><b>Passenger:</b> ${passenger.FirstName || ""} ${passenger.LastName || ""}</p>
+//       <p><b>Bus Operator:</b> ${tripData?.operator || "N/A"}</p>
+//       <p><b>Date of Travel:</b> ${tripData?.travelDate}</p>
+//       <p><b>Seats:</b> ${travellerData.map(p => p.SeatNo || p.SeatNumber).join(", ")}</p>
+//       <p><b>Total Paid:</b> ₹${totalPrice}</p>
+
+//       <p><b>Boarding:</b> ${tripData?.boardingPoint?.PointName || "N/A"}</p>
+//       <p><b>Dropping:</b> ${tripData?.droppingPoint?.PointName || "N/A"}</p>
+
+//       <hr/>
+//       <p>Thank you for booking with <b>Tirupati Package Tours</b>.</p>
+//     </div>
+//     `;
+
+//     // ------------------------------
+//     // PUPPETEER-CORE + CHROMIUM
+//     // ------------------------------
+//     const browser = await puppeteer.launch({
+//       args: chromium.args,
+//       defaultViewport: chromium.defaultViewport,
+//       executablePath: await chromium.executablePath(),
+//       headless: chromium.headless,
+//     });
+
+//     const page = await browser.newPage();
+//     await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+
+//     const pdfBuffer = await page.pdf({ format: "A4" });
+
+//     await browser.close();
+
+//     // ------------------------------
+//     // EMAIL SENDING
+//     // ------------------------------
+//     const transporter = nodemailer.createTransport({
+//       host: "smtpout.secureserver.net",
+//       port: 465,
+//       secure: true,
+//       auth: {
+//         user: "enquiry@tirupatipackagetours.com",
+//         pass: "Nagesh1987@",
+//       },
+//     });
+
+//     const mailOptions = {
+//       from: `"Tirupati Package Tours" <enquiry@tirupatipackagetours.com>`,
+//       to: contactData?.Email,
+//       subject: `Your eTicket - ${tripData?.operator || "Bus Trip"} (${tripData?.travelDate})`,
+//       html: `
+//         <p>Dear ${passenger.FirstName || "Passenger"},</p>
+//         <p>Thank you for booking with Tirupati Package Tours.</p>
+//         <p>Your eTicket is attached below.</p>
+//         <br/>
+//         <p>Warm regards,<br/>
+//         <b>Tirupati Package Tours</b><br/>
+//         +91 9731312275 / +91 8197882511</p>
+//       `,
+//       attachments: [
+//         {
+//           filename: `eTicket_${passenger.FirstName || "Passenger"}.pdf`,
+//           content: pdfBuffer,
+//           contentType: "application/pdf",
+//         },
+//       ],
+//     };
+
+//     await transporter.sendMail(mailOptions);
+
+//     res.json({ success: true, message: "Ticket email sent successfully!" });
+
+//   } catch (error) {
+//     console.error("❌ SEND TICKET ERROR:", error);
+
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to send ticket email",
+//       error: error.message,
+//     });
+//   }
+// });
 app.post("/api/send-ticket", async (req, res) => {
   try {
-    const { travellerData, contactData, totalPrice, tripData } = req.body;
-    const passenger = travellerData?.[0] || {};
+    const { travellerData, contactData, totalPrice, tripData, pdfBase64 } = req.body;
 
-    // ------------------------------
-    // HTML TO CONVERT INTO PDF
-    // ------------------------------
-    const htmlContent = `
-    <div style="font-family: Arial; padding: 20px; line-height: 1.5;">
-      <h2 style="color: #2b3e50;">eTicket Confirmation</h2>
+    if (!pdfBase64) {
+      return res.status(400).json({ success: false, message: "PDF missing" });
+    }
 
-      <p><b>Passenger:</b> ${passenger.FirstName || ""} ${passenger.LastName || ""}</p>
-      <p><b>Bus Operator:</b> ${tripData?.operator || "N/A"}</p>
-      <p><b>Date of Travel:</b> ${tripData?.travelDate}</p>
-      <p><b>Seats:</b> ${travellerData.map(p => p.SeatNo || p.SeatNumber).join(", ")}</p>
-      <p><b>Total Paid:</b> ₹${totalPrice}</p>
+    // Convert base64 to buffer
+    const pdfBuffer = Buffer.from(pdfBase64.split(";base64,").pop(), "base64");
 
-      <p><b>Boarding:</b> ${tripData?.boardingPoint?.PointName || "N/A"}</p>
-      <p><b>Dropping:</b> ${tripData?.droppingPoint?.PointName || "N/A"}</p>
-
-      <hr/>
-      <p>Thank you for booking with <b>Tirupati Package Tours</b>.</p>
-    </div>
-    `;
-
-    // ------------------------------
-    // PUPPETEER-CORE + CHROMIUM
-    // ------------------------------
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    });
-
-    const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
-
-    const pdfBuffer = await page.pdf({ format: "A4" });
-
-    await browser.close();
-
-    // ------------------------------
-    // EMAIL SENDING
-    // ------------------------------
+    // Email transport
     const transporter = nodemailer.createTransport({
       host: "smtpout.secureserver.net",
       port: 465,
@@ -1405,38 +1463,33 @@ app.post("/api/send-ticket", async (req, res) => {
       },
     });
 
-    const mailOptions = {
+    const passenger = travellerData?.[0] || {};
+
+    await transporter.sendMail({
       from: `"Tirupati Package Tours" <enquiry@tirupatipackagetours.com>`,
-      to: contactData?.Email,
-      subject: `Your eTicket - ${tripData?.operator || "Bus Trip"} (${tripData?.travelDate})`,
+      to: contactData.Email,
+      subject: `Your Tirupati Bus Ticket`,
       html: `
         <p>Dear ${passenger.FirstName || "Passenger"},</p>
-        <p>Thank you for booking with Tirupati Package Tours.</p>
-        <p>Your eTicket is attached below.</p>
-        <br/>
-        <p>Warm regards,<br/>
-        <b>Tirupati Package Tours</b><br/>
-        +91 9731312275 / +91 8197882511</p>
+        <p>Your ticket is attached below.</p>
+        <p>Thank you for choosing Tirupati Package Tours.</p>
       `,
       attachments: [
         {
-          filename: `eTicket_${passenger.FirstName || "Passenger"}.pdf`,
+          filename: "eTicket.pdf",
           content: pdfBuffer,
           contentType: "application/pdf",
         },
       ],
-    };
-
-    await transporter.sendMail(mailOptions);
+    });
 
     res.json({ success: true, message: "Ticket email sent successfully!" });
 
   } catch (error) {
-    console.error("❌ SEND TICKET ERROR:", error);
-
+    console.error("Email error:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to send ticket email",
+      message: "Failed to send email",
       error: error.message,
     });
   }
