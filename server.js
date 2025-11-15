@@ -1723,9 +1723,18 @@ setInterval(async () => {
     const pool = await sql.connect(dbConfig);
     await pool.query(`
       UPDATE BusBookingSeat
-      SET Status = 'Cancelled', PaymentStatus = 'Failed'
-      WHERE PaymentStatus = 'Pending' AND DATEDIFF(MINUTE, CreatedDt, GETDATE()) > 15;
+      SET Status = 'Cancelled', 
+          PaymentStatus = 'Failed',
+          LockStatus = 'Unlocked',
+          ModifiedDt = GETDATE(),
+      WHERE 
+        Status = 'Pending'
+        AND PaymentStatus = 'Pending'
+        AND JourneyDate >= CAST(GETDATE() AS DATE)
+        AND DATEDIFF(MINUTE, CreatedDt, GETDATE()) > 15;
     `);
+
+    console.log("🧹 Auto-cleanup: expired pending seats cancelled");
   } catch (err) {
     console.error("Payment cleanup error:", err.message);
   }
