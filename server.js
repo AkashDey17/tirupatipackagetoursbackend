@@ -460,6 +460,136 @@ WHERE bbd.BusBookingDetailID = @BusId;
 ////////////////////////////////
 
 //////////////////////////////////////
+// app.post("/api/bus-booking-seat", async (req, res) => {
+//   try {
+//     const payload = req.body;
+
+//     // Validate JourneyDate
+//     if (!payload.JourneyDate) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "JourneyDate is required" });
+//     }
+
+//     const pool = await sql.connect(dbConfig);
+//     const proc = "dbo.sp_BusBookingSeat";
+//     const saveFlag = payload.SavePassengerDetails === "Y" ? "Yes" : "No";
+
+//     const seats = Array.isArray(payload.SeatNo) ? payload.SeatNo : [payload.SeatNo];
+
+//     // ✅ Helper to normalize date
+//     const safeDate = (date) => {
+//       if (!date) return null;
+//       if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+//         return date; // already normalized by frontend
+//       }
+//       const d = new Date(date);
+//       if (isNaN(d.getTime())) return null;
+//       const yyyy = d.getFullYear();
+//       const mm = String(d.getMonth() + 1).padStart(2, "0");
+//       const dd = String(d.getDate()).padStart(2, "0");
+//       return `${yyyy}-${mm}-${dd}`;
+//     };
+
+//     // ============================================
+//     // ✅ Insert for each seat
+//     // ============================================
+//     let lastInsertedSeatId = null;
+
+//     for (const seat of seats) {
+//       const request = pool.request();
+
+//       request.input("Flag", sql.Char(1), "I");
+//       request.input("BusBookingSeatID", sql.Int, payload.BusBookingSeatID ?? 0);
+//       request.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
+//       request.input("BusOperatorID", sql.Int, payload.BusOperatorID);
+
+//       //If user clicked NO (PassengerID = 0) → send NULL to DB
+//       request.input("UserID", sql.Int, payload.UserID === 0 ? null : payload.UserID);
+
+//       request.input("ForSelf", sql.Bit, payload.ForSelf ? 1 : 0);
+//       request.input("IsPrimary", sql.Int, payload.IsPrimary ?? 1);
+//       request.input("SeatNo", sql.NVarChar(50), seat);
+//       request.input("FirstName", sql.VarChar(250), payload.FirstName ?? null);
+//       request.input("MiddleName", sql.VarChar(250), payload.MiddleName ?? null);
+//       request.input("LastName", sql.VarChar(250), payload.LastName ?? null);
+//       request.input("Email", sql.VarChar(150), payload.Email ?? null);
+//       request.input("ContactNo", sql.VarChar(50), payload.ContactNo ?? null);
+//       request.input("Gender", sql.VarChar(50), payload.Gender ?? null);
+//       request.input("AadharNo", sql.VarChar(20), payload.AadharNo ?? null);
+//       request.input("PancardNo", sql.VarChar(20), payload.PancardNo ?? null);
+//       request.input("BloodGroup", sql.VarChar(10), payload.BloodGroup ?? null);
+//       request.input("DOB", sql.DateTime, safeDate(payload.DOB));
+//       request.input("FoodPref", sql.VarChar(100), payload.FoodPref ?? null);
+//       request.input("Disabled", sql.Bit, payload.Disabled ? 1 : 0);
+//       request.input("Pregnant", sql.Bit, payload.Pregnant ? 1 : 0);
+//       request.input("RegisteredCompanyNumber", sql.VarChar(50), payload.RegisteredCompanyNumber ?? null);
+//       request.input("RegisteredCompanyName", sql.VarChar(50), payload.RegisteredCompanyName ?? null);
+//       request.input("DrivingLicence", sql.VarChar(100), payload.DrivingLicence ?? null);
+//       request.input("PassportNo", sql.VarChar(100), payload.PassportNo ?? null);
+//       request.input("RationCard", sql.VarChar(100), payload.RationCard ?? null);
+//       request.input("VoterID", sql.VarChar(100), payload.VoterID ?? null);
+//       request.input("Others", sql.VarChar(500), payload.Others ?? null);
+//       request.input("NRI", sql.Bit, payload.NRI ? 1 : 0);
+//       request.input("CreatedBy", sql.Int, payload.CreatedBy ?? 1);
+//       request.input("SavePassengerDetails", sql.VarChar(50), saveFlag);
+//       request.input("JourneyDate", sql.Date, payload.JourneyDate);
+
+//       // ✅ Execute stored procedure
+//       const result = await request.execute(proc);
+
+//       // ✅ Capture BusBookingSeatID from SP result
+//       const insertedId = result.recordset?.[0]?.BusBookingSeatID;
+//       if (insertedId) lastInsertedSeatId = insertedId;
+
+//       // ============================================
+//       // ✅ Manage Seat Lock table & update booking
+//       // ============================================
+
+//       // // 1️⃣ Delete temporary lock for this seat and journey date
+//       // const unlockRequest = pool.request();
+//       // unlockRequest.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
+//       // unlockRequest.input("SeatNo", sql.VarChar(50), seat);
+//       // unlockRequest.input("JourneyDate", sql.Date, payload.JourneyDate);
+//       // await unlockRequest.query(`
+//       //   DELETE FROM SeatLock
+//       //   WHERE BusBookingDetailsID = @BusBookingDetailsID
+//       //     AND SeatNo = @SeatNo
+//       //     AND CAST(JourneyDate AS DATE) = @JourneyDate
+//       // `);
+
+//       // 2️⃣ Update seat booking status to "Booked"
+//       const updateRequest = pool.request();
+//       updateRequest.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
+//       updateRequest.input("SeatNo", sql.VarChar(50), seat);
+//       updateRequest.input("JourneyDate", sql.Date, payload.JourneyDate);
+//       await updateRequest.query(`
+//         UPDATE BusBookingSeat
+//         SET Status = 'Pending',
+//             PaymentStatus = 'Pending',
+//             LockStatus = 'Locked'
+//         WHERE BusBookingDetailsID = @BusBookingDetailsID
+//           AND SeatNo = @SeatNo
+//           AND CAST(JourneyDate AS DATE) = @JourneyDate
+//       `);
+//     }
+
+//     // ============================================
+//     // ✅ Final Response to Frontend
+//     // ============================================
+//     res.status(201).json({
+//       success: true,
+//       message: "✅ Booking saved successfully for given JourneyDate",
+//       BusBookingSeatID: lastInsertedSeatId,
+//     });
+//        console.log("🚀 BusBookingSeatID", { lastInsertedSeatId });
+
+//   } catch (err) {
+//     console.error("❌ SQL INSERT error:", err);
+//     res.status(500).json({ success: false, error: err.message });
+//   }
+// });
+
 app.post("/api/bus-booking-seat", async (req, res) => {
   try {
     const payload = req.body;
@@ -542,36 +672,7 @@ app.post("/api/bus-booking-seat", async (req, res) => {
       const insertedId = result.recordset?.[0]?.BusBookingSeatID;
       if (insertedId) lastInsertedSeatId = insertedId;
 
-      // ============================================
-      // ✅ Manage Seat Lock table & update booking
-      // ============================================
 
-      // // 1️⃣ Delete temporary lock for this seat and journey date
-      // const unlockRequest = pool.request();
-      // unlockRequest.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
-      // unlockRequest.input("SeatNo", sql.VarChar(50), seat);
-      // unlockRequest.input("JourneyDate", sql.Date, payload.JourneyDate);
-      // await unlockRequest.query(`
-      //   DELETE FROM SeatLock
-      //   WHERE BusBookingDetailsID = @BusBookingDetailsID
-      //     AND SeatNo = @SeatNo
-      //     AND CAST(JourneyDate AS DATE) = @JourneyDate
-      // `);
-
-      // 2️⃣ Update seat booking status to "Booked"
-      const updateRequest = pool.request();
-      updateRequest.input("BusBookingDetailsID", sql.Int, payload.BusBookingDetailsID);
-      updateRequest.input("SeatNo", sql.VarChar(50), seat);
-      updateRequest.input("JourneyDate", sql.Date, payload.JourneyDate);
-      await updateRequest.query(`
-        UPDATE BusBookingSeat
-        SET Status = 'Pending',
-            PaymentStatus = 'Pending',
-            LockStatus = 'Locked'
-        WHERE BusBookingDetailsID = @BusBookingDetailsID
-          AND SeatNo = @SeatNo
-          AND CAST(JourneyDate AS DATE) = @JourneyDate
-      `);
     }
 
     // ============================================
@@ -582,7 +683,7 @@ app.post("/api/bus-booking-seat", async (req, res) => {
       message: "✅ Booking saved successfully for given JourneyDate",
       BusBookingSeatID: lastInsertedSeatId,
     });
-       console.log("🚀 BusBookingSeatID", { lastInsertedSeatId });
+    console.log("🚀 BusBookingSeatID", { lastInsertedSeatId });
 
   } catch (err) {
     console.error("❌ SQL INSERT error:", err);
@@ -893,11 +994,125 @@ app.get("/api/busBoardingCounts", async (req, res) => {
 
 /////// phone pe payment ///////////
 
+// app.post("/api/success", async (req, res) => {
+//   try {
+//     const {
+//       UserID,
+//       BusBookingSeatID,
+//       BookingdtlsID,
+//       Amount,
+//       PaymentMode,
+//       TransactionID,
+//       TransactionResponse,
+//       TransactionCode,
+//       PaymentStatus,
+//       ErrorCode,
+//       CreatedBy,
+//       orderId,
+//       transactionId,
+//       status,
+//       code,
+//       JourneyDate, // 👈 Optional, pass from frontend/callback
+//     } = req.body;
+
+//     // 🧩 Normalize incoming values
+//     const normalizedAmount = parseInt(Amount || req.body.amount || 0);
+//     const normalizedTxnId = TransactionID || transactionId || orderId || null;
+//     const normalizedStatus = PaymentStatus || status || "Success";
+//     const normalizedCode = TransactionCode || code || "00";
+//     const normalizedResponse =
+//       TransactionResponse || JSON.stringify(req.body);
+//     const normalizedJourneyDate =
+//       JourneyDate || new Date().toISOString().split("T")[0];
+
+//     // ⚠️ Validate essential fields
+//     if (!normalizedTxnId || !normalizedAmount) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Amount and TransactionID are required",
+//       });
+//     }
+
+//     const pool = await sql.connect(dbConfig);
+
+//     // ✅ 1️⃣ Record the payment in your table
+//     const request = pool.request();
+//     request.input("Flag", sql.Char(1), "I");
+//     request.input("PaymentID", sql.Int, 0);
+//     request.input("UserID", sql.Int, UserID ?? null);
+//     request.input("BookingdtlsID", sql.Int, BookingdtlsID ?? null);
+
+//     const parsedBusBookingSeatId =
+//       BusBookingSeatID && BusBookingSeatID !== "undefined"
+//         ? parseInt(BusBookingSeatID)
+//         : null;
+//     request.input("BusBookingSeatID", sql.Int, parsedBusBookingSeatId);
+
+//     request.input("Amount", sql.Int, normalizedAmount);
+//     request.input("PaymentMode", sql.VarChar(50), PaymentMode ?? "PhonePe");
+//     request.input("TransactionID", sql.VarChar(sql.MAX), normalizedTxnId);
+//     request.input("TransactionResponse", sql.VarChar(sql.MAX), normalizedResponse);
+//     request.input("TransactionCode", sql.VarChar(50), normalizedCode);
+//     request.input("PaymentStatus", sql.VarChar(50), normalizedStatus);
+//     request.input("ErrorCode", sql.VarChar(500), ErrorCode ?? null);
+//     request.input("CreatedBy", sql.Int, CreatedBy ?? UserID ?? 1);
+
+//     await request.execute("dbo.sp_Payment");
+
+//     console.log("✅ Payment recorded successfully:", normalizedTxnId);
+
+//     const updateSeat = pool.request();
+// updateSeat.input("BusBookingSeatID", sql.Int, parsedBusBookingSeatId);
+// updateSeat.input("BookingdtlsID", sql.Int, BookingdtlsID);
+// updateSeat.input("JourneyDate", sql.Date, normalizedJourneyDate);
+
+// // 🧩 If JourneyDate is NULL, update without it
+// await updateSeat.query(`
+//   UPDATE BusBookingSeat
+//   SET Status = 'Booked',
+//       PaymentStatus = 'Success',
+//       LockStatus ='Unlocked'
+
+//   WHERE 
+//     (BusBookingSeatID = @BusBookingSeatID OR BusBookingDetailsID = @BookingdtlsID)
+//     ${normalizedJourneyDate ? "AND CAST(JourneyDate AS DATE) = @JourneyDate" : ""}
+// `);
+
+
+//     console.log("✅ Booking status updated successfully");
+
+//     // ✅ 3️⃣ Delete corresponding SeatLock records
+//     const cleanup = pool.request();
+//     cleanup.input("BusBookingDetailsID", sql.Int, BookingdtlsID);
+//     cleanup.input("JourneyDate", sql.Date, normalizedJourneyDate);
+
+//     await cleanup.query(`
+//       DELETE FROM SeatLock
+//       WHERE BusBookingDetailsID = @BusBookingDetailsID
+//         AND CAST(JourneyDate AS DATE) = @JourneyDate
+//     `);
+
+//     console.log("🧹 Seat locks cleaned up after successful payment");
+
+//     // ✅ 4️⃣ Respond to frontend
+//     res.status(201).json({
+//       success: true,
+//       message: "✅ Payment recorded, seat booked, and lock cleared successfully",
+//     });
+//   } catch (err) {
+//     console.error("❌ Error saving payment:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to record payment",
+//       error: err.message,
+//     });
+//   }
+// });
+
 app.post("/api/success", async (req, res) => {
   try {
     const {
       UserID,
-      BusBookingSeatID,
       BookingdtlsID,
       Amount,
       PaymentMode,
@@ -907,24 +1122,27 @@ app.post("/api/success", async (req, res) => {
       PaymentStatus,
       ErrorCode,
       CreatedBy,
-      orderId,
-      transactionId,
-      status,
-      code,
-      JourneyDate, // 👈 Optional, pass from frontend/callback
+      JourneyDate,
+      BusBookingSeatIDs // ⭐ now array from callback
     } = req.body;
 
-    // 🧩 Normalize incoming values
-    const normalizedAmount = parseInt(Amount || req.body.amount || 0);
-    const normalizedTxnId = TransactionID || transactionId || orderId || null;
-    const normalizedStatus = PaymentStatus || status || "Success";
-    const normalizedCode = TransactionCode || code || "00";
+    // Convert seat IDs → Array<int>
+    const seatIdArray = Array.isArray(BusBookingSeatIDs)
+      ? BusBookingSeatIDs.map((id) => parseInt(id))
+      : [];
+
+    console.log("🎯 Seat IDs for ticket generation:", seatIdArray);
+
+    // Normalize fields
+    const normalizedAmount = parseInt(Amount || 0);
+    const normalizedTxnId = TransactionID || null;
+    const normalizedStatus = PaymentStatus || "Success";
+    const normalizedCode = TransactionCode || "00";
     const normalizedResponse =
       TransactionResponse || JSON.stringify(req.body);
     const normalizedJourneyDate =
       JourneyDate || new Date().toISOString().split("T")[0];
 
-    // ⚠️ Validate essential fields
     if (!normalizedTxnId || !normalizedAmount) {
       return res.status(400).json({
         success: false,
@@ -934,75 +1152,67 @@ app.post("/api/success", async (req, res) => {
 
     const pool = await sql.connect(dbConfig);
 
-    // ✅ 1️⃣ Record the payment in your table
-    const request = pool.request();
-    request.input("Flag", sql.Char(1), "I");
-    request.input("PaymentID", sql.Int, 0);
-    request.input("UserID", sql.Int, UserID ?? null);
-    request.input("BookingdtlsID", sql.Int, BookingdtlsID ?? null);
+    // ------------------------------------------------------------------
+    // 1️⃣ SAVE PAYMENT
+    // ------------------------------------------------------------------
+    const payReq = pool.request();
+    payReq.input("Flag", sql.Char(1), "I");
+    payReq.input("PaymentID", sql.Int, 0);
+    payReq.input("UserID", sql.Int, UserID);
+    payReq.input("BookingdtlsID", sql.Int, BookingdtlsID);
 
-    const parsedBusBookingSeatId =
-      BusBookingSeatID && BusBookingSeatID !== "undefined"
-        ? parseInt(BusBookingSeatID)
-        : null;
-    request.input("BusBookingSeatID", sql.Int, parsedBusBookingSeatId);
+    payReq.input("BusBookingSeatID", sql.Int, seatIdArray[0]); // ✔ any one seat ID
 
-    request.input("Amount", sql.Int, normalizedAmount);
-    request.input("PaymentMode", sql.VarChar(50), PaymentMode ?? "PhonePe");
-    request.input("TransactionID", sql.VarChar(sql.MAX), normalizedTxnId);
-    request.input("TransactionResponse", sql.VarChar(sql.MAX), normalizedResponse);
-    request.input("TransactionCode", sql.VarChar(50), normalizedCode);
-    request.input("PaymentStatus", sql.VarChar(50), normalizedStatus);
-    request.input("ErrorCode", sql.VarChar(500), ErrorCode ?? null);
-    request.input("CreatedBy", sql.Int, CreatedBy ?? UserID ?? 1);
+    payReq.input("Amount", sql.Int, normalizedAmount);
+    payReq.input("PaymentMode", sql.VarChar(50), PaymentMode || "PhonePe");
+    payReq.input("TransactionID", sql.VarChar(sql.MAX), normalizedTxnId);
+    payReq.input(
+      "TransactionResponse",
+      sql.VarChar(sql.MAX),
+      normalizedResponse
+    );
+    payReq.input("TransactionCode", sql.VarChar(50), normalizedCode);
+    payReq.input("PaymentStatus", sql.VarChar(50), normalizedStatus);
+    payReq.input("ErrorCode", sql.VarChar(500), ErrorCode || null);
+    payReq.input("CreatedBy", sql.Int, CreatedBy || UserID || 1);
 
-    await request.execute("dbo.sp_Payment");
+    await payReq.execute("dbo.sp_Payment");
 
-    console.log("✅ Payment recorded successfully:", normalizedTxnId);
+    console.log("💾 Payment saved successfully:", normalizedTxnId);
 
-    const updateSeat = pool.request();
-updateSeat.input("BusBookingSeatID", sql.Int, parsedBusBookingSeatId);
-updateSeat.input("BookingdtlsID", sql.Int, BookingdtlsID);
-updateSeat.input("JourneyDate", sql.Date, normalizedJourneyDate);
+    /// ------------------------------------------------------
+    // 2️⃣ Generate Tickets for multiple seat IDs
+    // ------------------------------------------------------
+    const ticketReq = pool.request();
 
-// 🧩 If JourneyDate is NULL, update without it
-await updateSeat.query(`
-  UPDATE BusBookingSeat
-  SET Status = 'Booked',
-      PaymentStatus = 'Success',
-      LockStatus ='Unlocked'
+    // regular inputs
+    ticketReq.input("UserID", sql.Int, UserID);
+    ticketReq.input("BookingdtlsID", sql.Int, BookingdtlsID);
+    ticketReq.input("JourneyDate", sql.Date, normalizedJourneyDate);
 
-  WHERE 
-    (BusBookingSeatID = @BusBookingSeatID OR BusBookingDetailsID = @BookingdtlsID)
-    ${normalizedJourneyDate ? "AND CAST(JourneyDate AS DATE) = @JourneyDate" : ""}
-`);
+    // ⭐ Create TVP for seat IDs
+    const seatList = new sql.Table("dbo.IntList");
+    seatList.columns.add("SeatID", sql.Int);
 
+    seatIdArray.forEach((id) => seatList.rows.add(id));
 
-    console.log("✅ Booking status updated successfully");
+    // ⭐ MUST specify sql.TVP
+    ticketReq.input("SeatIDs", sql.TVP, seatList);
 
-    // ✅ 3️⃣ Delete corresponding SeatLock records
-    const cleanup = pool.request();
-    cleanup.input("BusBookingDetailsID", sql.Int, BookingdtlsID);
-    cleanup.input("JourneyDate", sql.Date, normalizedJourneyDate);
+    const ticketRes = await ticketReq.execute("sp_GenerateTicketsAndUpdateBooking");
 
-    await cleanup.query(`
-      DELETE FROM SeatLock
-      WHERE BusBookingDetailsID = @BusBookingDetailsID
-        AND CAST(JourneyDate AS DATE) = @JourneyDate
-    `);
+    console.log("🎫 Tickets generated:", ticketRes.recordset);
 
-    console.log("🧹 Seat locks cleaned up after successful payment");
-
-    // ✅ 4️⃣ Respond to frontend
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
-      message: "✅ Payment recorded, seat booked, and lock cleared successfully",
+      message: "Payment recorded and tickets generated successfully.",
+      tickets: ticketRes.recordset,
     });
   } catch (err) {
-    console.error("❌ Error saving payment:", err);
-    res.status(500).json({
+    console.error("❌ Error in /api/success:", err);
+    return res.status(500).json({
       success: false,
-      message: "Failed to record payment",
+      message: "Internal server error during payment success.",
       error: err.message,
     });
   }
@@ -1040,13 +1250,81 @@ async function getOAuthToken() {
 
 
 
+// app.post("/api/payment/create-order", async (req, res) => {
+//   try {
+//    const { merchantOrderId, amount, userId, bookingdtlsId, busBookingSeatId ,selectedDate, packageId,} = req.body;
+
+
+//     if (!merchantOrderId || !amount)
+//       return res.status(400).json({ error: "merchantOrderId and amount are required" });
+
+//     const token = await getOAuthToken();
+//     if (!token)
+//       return res.status(500).json({ error: "Failed to get OAuth token" });
+
+//     const requestBody = {
+//       merchantOrderId,
+//       amount: parseInt(amount),
+//       expireAfter: 1200,
+//       paymentFlow: {
+//         type: "PG_CHECKOUT",
+//         message: "Payment for Tirupati Package",
+//         merchantUrls: {
+//           // ✅ Include IDs in callback URL
+        
+
+//         // redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
+//            redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
+                  
+
+//         },
+//       },
+//     };
+
+//     const response = await axios.post(
+//       `${SANDBOX_BASE_URL}/checkout/v2/pay`,
+//       requestBody,
+//       {
+//         headers: {
+//           Authorization: `O-Bearer ${token}`,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+
+//     res.json({ orderId: merchantOrderId, phonepeResponse: response.data });
+//   } catch (err) {
+//     console.error("Error creating order:", err.response?.data || err.message);
+//     res.status(500).json({ error: err.response?.data || err.message });
+//   }
+// });
+// ---------------------------------------------
+// ✅ CALLBACK AFTER PAYMENT SUCCESS
+// ---------------------------------------------
+
 app.post("/api/payment/create-order", async (req, res) => {
   try {
-   const { merchantOrderId, amount, userId, bookingdtlsId, busBookingSeatId ,selectedDate, packageId,} = req.body;
+    const {
+      merchantOrderId,
+      amount,
+      userId,
+      bookingdtlsId,
+      busBookingSeatIds,   // ⭐ ARRAY coming from frontend
+      selectedDate,
+      packageId,
+      from,
+    } = req.body;
 
+    if (!merchantOrderId || !amount) {
+      return res.status(400).json({
+        error: "merchantOrderId and amount are required",
+      });
+    }
 
-    if (!merchantOrderId || !amount)
-      return res.status(400).json({ error: "merchantOrderId and amount are required" });
+    // ✔ Convert array → comma string for callback
+    const seatIdsString = Array.isArray(busBookingSeatIds)
+      ? busBookingSeatIds.join(",")
+      : "";
 
     const token = await getOAuthToken();
     if (!token)
@@ -1059,14 +1337,11 @@ app.post("/api/payment/create-order", async (req, res) => {
       paymentFlow: {
         type: "PG_CHECKOUT",
         message: "Payment for Tirupati Package",
+
         merchantUrls: {
-          // ✅ Include IDs in callback URL
-        
-
-         redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
-        //   redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatId=${busBookingSeatId}&journeyDate=${selectedDate}`,
-                  
-
+          // ⭐ Pass MULTIPLE seat IDs
+         // redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatIds=${seatIdsString}&journeyDate=${selectedDate}&packageId=${packageId}&from=${from}`,
+         redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatIds=${seatIdsString}&journeyDate=${selectedDate}&packageId=${packageId}&from=${from}`,
         },
       },
     };
@@ -1082,76 +1357,185 @@ app.post("/api/payment/create-order", async (req, res) => {
       }
     );
 
-    res.json({ orderId: merchantOrderId, phonepeResponse: response.data });
+    res.json({
+      orderId: merchantOrderId,
+      phonepeResponse: response.data,
+    });
   } catch (err) {
-    console.error("Error creating order:", err.response?.data || err.message);
-    res.status(500).json({ error: err.response?.data || err.message });
+    console.error(
+      "Error creating order:",
+      err.response?.data || err.message
+    );
+    res.status(500).json({
+      error: err.response?.data || err.message,
+    });
   }
 });
-// ---------------------------------------------
-// ✅ CALLBACK AFTER PAYMENT SUCCESS
-// ---------------------------------------------
 
 
+// app.get("/api/payment/callback", async (req, res) => {
+//   try {
+//     const { orderId, amount, userId, bookingdtlsId, busBookingSeatId, journeyDate,packageId } = req.query;
+
+//     console.log("🔄 CALLBACK PARAMS:", req.query);
+
+//     // ✅ 1️⃣ Post to your success endpoint to record payment and update seats
+//      //  await axios.post("https://api.tirupatipackagetours.com/api/success", {
+//   await axios.post("http://localhost:5000/api/success", {
+//       UserID: userId,
+//       BookingdtlsID: bookingdtlsId,
+//       BusBookingSeatID: busBookingSeatId,
+//       Amount: amount / 100,
+//       PaymentMode: "PhonePe",
+//       TransactionID: orderId,
+//       PaymentStatus: "Success",
+//       TransactionCode: "00",
+//       TransactionResponse: "Payment successful via PhonePe",
+//       CreatedBy: userId || 1,
+//       JourneyDate: journeyDate || new Date().toISOString().split("T")[0], // ✅ Pass journey date
+//     });
+
+//     // ✅ 2️⃣ Redirect user to success page
+//      //  res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}`);
+//     res.redirect(`http://localhost:8080/payment-result?orderId=${orderId}`);
+//   } catch (err) {
+//     console.error("❌ Payment callback error:", err);
+
+//     try {
+//       const pool = await sql.connect(dbConfig);
+
+//       // ✅ 3️⃣ Mark booking as Cancelled + Failed
+//       const failUpdate = pool.request();
+//       failUpdate.input("BusBookingSeatID", sql.Int, parseInt(req.query.busBookingSeatId || 0));
+//       failUpdate.input("BookingdtlsID", sql.Int, parseInt(req.query.bookingdtlsId || 0));
+//       failUpdate.input("JourneyDate", sql.Date, req.query.journeyDate || new Date().toISOString().split("T")[0]);
+
+//       await failUpdate.query(`
+//         UPDATE BusBookingSeat
+//         SET Status = 'Cancelled',
+//             PaymentStatus = 'Failed'
+//         WHERE 
+//           (BusBookingSeatID = @BusBookingSeatID OR BusBookingDetailsID = @BookingdtlsID)
+//           AND CAST(JourneyDate AS DATE) = @JourneyDate
+//       `);
+
+//       console.log("🚫 Booking marked as failed/cancelled");
+
+//       // ✅ 4️⃣ Clean up SeatLock entries
+//       const cleanup = pool.request();
+//       cleanup.input("BusBookingDetailsID", sql.Int, parseInt(req.query.bookingdtlsId || 0));
+//       cleanup.input("JourneyDate", sql.Date, req.query.journeyDate || new Date().toISOString().split("T")[0]);
+
+//       await cleanup.query(`
+//         DELETE FROM SeatLock
+//         WHERE BusBookingDetailsID = @BusBookingDetailsID
+//           AND CAST(JourneyDate AS DATE) = @JourneyDate
+//       `);
+
+//       console.log("🧹 Seat locks removed after failed payment");
+//     } catch (innerErr) {
+//       console.error("⚠️ Cleanup/DB update failed:", innerErr);
+//     }
+
+//     // ✅ 5️⃣ Redirect user to frontend failure page
+//   //  res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
+//     res.redirect(`http://localhost:8080/payment-failed`);
+//   }
+// });
+
+
+//////////////// phone pe payment ///////
+////////////////////////////////////
+
+// ----------------------------
 
 
 app.get("/api/payment/callback", async (req, res) => {
   try {
-    const { orderId, amount, userId, bookingdtlsId, busBookingSeatId, journeyDate,packageId } = req.query;
+    const {
+      orderId,
+      amount,
+      userId,
+      bookingdtlsId,
+      busBookingSeatIds,   // ⭐ Now receiving comma separated seat IDs
+      journeyDate,
+      packageId,
+    } = req.query;
 
     console.log("🔄 CALLBACK PARAMS:", req.query);
 
-    // ✅ 1️⃣ Post to your success endpoint to record payment and update seats
-       await axios.post("https://api.tirupatipackagetours.com/api/success", {
-  //  await axios.post("http://localhost:5000/api/success", {
-      UserID: userId,
-      BookingdtlsID: bookingdtlsId,
-      BusBookingSeatID: busBookingSeatId,
-      Amount: amount / 100,
-      PaymentMode: "PhonePe",
-      TransactionID: orderId,
-      PaymentStatus: "Success",
-      TransactionCode: "00",
-      TransactionResponse: "Payment successful via PhonePe",
-      CreatedBy: userId || 1,
-      JourneyDate: journeyDate || new Date().toISOString().split("T")[0], // ✅ Pass journey date
-    });
+    // ⭐ Convert CSV to array
+    const seatIdArray = busBookingSeatIds
+      ? busBookingSeatIds.split(",").map((id) => parseInt(id))
+      : [];
 
-    // ✅ 2️⃣ Redirect user to success page
-       res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}`);
-   // res.redirect(`http://localhost:8080/payment-result?orderId=${orderId}`);
+    console.log("🆔 Parsed Seat ID Array:", seatIdArray);
+
+    // ⭐ Send the array into /api/success
+    // const successResponse = await axios.post(
+    //   "http://localhost:5000/api/success",
+    //   {
+    await axios.post("https://api.tirupatipackagetours.com/api/success", {
+        UserID: userId,
+        BookingdtlsID: bookingdtlsId,
+
+        // ⭐ Send array instead of single ID
+        BusBookingSeatIDs: seatIdArray,
+
+        Amount: amount / 100,
+        PaymentMode: "PhonePe",
+        TransactionID: orderId,
+        PaymentStatus: "Success",
+        TransactionCode: "00",
+        TransactionResponse: "Payment successful via PhonePe",
+        CreatedBy: userId || 1,
+        JourneyDate: journeyDate,
+      }
+    );
+
+    // ⭐ Encode ticket numbers for frontend
+    const ticketsEncoded = encodeURIComponent(
+      JSON.stringify(successResponse.data.tickets)
+    );
+
+    // ⭐ Redirect to payment result page
+    // res.redirect(
+    //   `http://localhost:8080/payment-result?orderId=${orderId}&tickets=${ticketsEncoded}`
+    // );
+    res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}&tickets=${ticketsEncoded}`);
+
   } catch (err) {
     console.error("❌ Payment callback error:", err);
 
     try {
       const pool = await sql.connect(dbConfig);
 
-      // ✅ 3️⃣ Mark booking as Cancelled + Failed
-      const failUpdate = pool.request();
-      failUpdate.input("BusBookingSeatID", sql.Int, parseInt(req.query.busBookingSeatId || 0));
-      failUpdate.input("BookingdtlsID", sql.Int, parseInt(req.query.bookingdtlsId || 0));
-      failUpdate.input("JourneyDate", sql.Date, req.query.journeyDate || new Date().toISOString().split("T")[0]);
+      // ⭐ Parse multiple seat IDs if present
+      const seatIdArray =
+        req.query.busBookingSeatIds?.split(",").map((id) => parseInt(id)) ||
+        [];
 
-      await failUpdate.query(`
-        UPDATE BusBookingSeat
-        SET Status = 'Cancelled',
-            PaymentStatus = 'Failed'
-        WHERE 
-          (BusBookingSeatID = @BusBookingSeatID OR BusBookingDetailsID = @BookingdtlsID)
-          AND CAST(JourneyDate AS DATE) = @JourneyDate
-      `);
+      console.log("❌ Handling failure for seats:", seatIdArray);
+
+      // ⭐ Cancel MULTIPLE booked seats
+      if (seatIdArray.length > 0) {
+        await pool.request().query(`
+          UPDATE BusBookingSeat
+          SET Status = 'Cancelled',
+              PaymentStatus = 'Failed'
+          WHERE BusBookingSeatID IN (${seatIdArray.join(",")})
+        `);
+      }
+
+     
 
       console.log("🚫 Booking marked as failed/cancelled");
 
-      // ✅ 4️⃣ Clean up SeatLock entries
-      const cleanup = pool.request();
-      cleanup.input("BusBookingDetailsID", sql.Int, parseInt(req.query.bookingdtlsId || 0));
-      cleanup.input("JourneyDate", sql.Date, req.query.journeyDate || new Date().toISOString().split("T")[0]);
-
-      await cleanup.query(`
+      // ⭐ Cleanup SeatLock for journey date
+      await pool.request().query(`
         DELETE FROM SeatLock
-        WHERE BusBookingDetailsID = @BusBookingDetailsID
-          AND CAST(JourneyDate AS DATE) = @JourneyDate
+        WHERE BusBookingDetailsID = ${parseInt(req.query.bookingdtlsId || 0)}
+          AND CAST(JourneyDate AS DATE) = '${req.query.journeyDate || new Date().toISOString().split("T")[0]}'
       `);
 
       console.log("🧹 Seat locks removed after failed payment");
@@ -1159,17 +1543,11 @@ app.get("/api/payment/callback", async (req, res) => {
       console.error("⚠️ Cleanup/DB update failed:", innerErr);
     }
 
-    // ✅ 5️⃣ Redirect user to frontend failure page
-    res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
-   // res.redirect(`http://localhost:8080/payment-failed`);
+    // Redirect to failure page
+    // res.redirect(`http://localhost:8080/payment-failed`);
+     res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
   }
 });
-
-
-//////////////// phone pe payment ///////
-////////////////////////////////////
-
-// ----------------------------
 
 app.get("/api/bus/boardingPoints/:busId", async (req, res) => {
   const { busId } = req.params;
@@ -1487,6 +1865,8 @@ app.post("/api/send-ticket", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+
 
 
 
