@@ -1824,47 +1824,6 @@ setInterval(async () => {
 //     });
 //   }
 // });
-app.post("/api/send-ticket", async (req, res) => {
-  try {
-    const { travellerData, contactData, pdfBase64 } = req.body;
-
-    if (!pdfBase64) {
-      return res.status(400).json({ success: false, message: "PDF missing" });
-    }
-
-    // Convert PDF Base64 to buffer
-    const pdfBuffer = Buffer.from(pdfBase64.split(";base64,").pop(), "base64");
-
-    const transporter = nodemailer.createTransport({
-      host: "smtpout.secureserver.net",
-      port: 465,
-      secure: true,
-      auth: {
-        user: "enquiry@tirupatipackagetours.com",
-        pass: "Nagesh1987@",
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"Tirupati Package Tours" <enquiry@tirupatipackagetours.com>`,
-      to: contactData.Email,
-      subject: "Your Tirupati Ticket",
-      html: `<p>Your ticket is attached.</p>`,
-      attachments: [
-        {
-          filename: "ticket.pdf",
-          content: pdfBuffer,
-          contentType: "application/pdf",
-        },
-      ],
-    });
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error("EMAIL ERROR:", err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
 
 
