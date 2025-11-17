@@ -1827,16 +1827,6 @@ setInterval(async () => {
 //   }
 // });
 
-
-
-
-
-
-
-
-
-
-
 // AUTO-ARCHIVE JOB FOR OLD BUS BOOKING RECORDS (using stored procedure)
 // ---------------------------------------------------
 
