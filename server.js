@@ -1493,16 +1493,25 @@ app.get("/api/payment/callback", async (req, res) => {
       }
     );
 
-    // ⭐ Encode ticket numbers for frontend
-    const ticketsEncoded = encodeURIComponent(
-      JSON.stringify(successResponse.data.tickets)
-    );
-
-    // ⭐ Redirect to payment result page
-    // res.redirect(
-    //   `http://localhost:8080/payment-result?orderId=${orderId}&tickets=${ticketsEncoded}`
+    // // ⭐ Encode ticket numbers for frontend
+    // const ticketsEncoded = encodeURIComponent(
+    //   JSON.stringify(successResponse.data.tickets)
     // );
-    res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}&tickets=${ticketsEncoded}`);
+
+    // // ⭐ Redirect to payment result page
+    // // res.redirect(
+    // //   `http://localhost:8080/payment-result?orderId=${orderId}&tickets=${ticketsEncoded}`
+    // // );
+    // res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}&tickets=${ticketsEncoded}`);
+
+    let ticketsEncoded = "";
+    if (successResponse?.data?.tickets) {
+      ticketsEncoded = encodeURIComponent(JSON.stringify(successResponse.data.tickets));
+    }
+
+    return res.redirect(
+      `https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}&tickets=${ticketsEncoded}`
+    );
 
   } catch (err) {
     console.error("❌ Payment callback error:", err);
