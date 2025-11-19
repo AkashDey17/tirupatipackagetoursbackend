@@ -2,7 +2,7 @@
 const express = require("express");
 const sql = require("mssql");
 const moment = require("moment-timezone");
- const cors = require("cors");
+const cors = require("cors");
 const axios = require("axios");
 //const pdf = require("html-pdf-node");
 // const puppeteer = require("puppeteer-core");
@@ -41,41 +41,41 @@ const PORT = process.env.PORT || 5000;
 
 
 
-const dbConfig = {
-  user: "sqladmin",
-  password: "Sanchar6t1",
-  server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com",
-  port: 1433,
-  database: "Sanchar6T_Dev",
-  options: {
-    encrypt: true,
-    trustServerCertificate: true,
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
-};
-
-
-
 // const dbConfig = {
-//   user: process.env.DB_USER,       
-//   password: process.env.DB_PASSWORD,
-//   server: process.env.DB_SERVER,   
-//   port: parseInt(process.env.DB_PORT),  // <-- use port from .env
-//   database: process.env.DB_NAME,
+//   user: "sqladmin",
+//   password: "Sanchar6t1",
+//   server: "sqldatabase01.cx204wkac5t2.ap-south-1.rds.amazonaws.com",
+//   port: 1433,
+//   database: "Sanchar6T_Dev",
 //   options: {
-//     encrypt: false,                // false for local dev
-//     trustServerCertificate: true
+//     encrypt: true,
+//     trustServerCertificate: true,
 //   },
 //   pool: {
 //     max: 10,
 //     min: 0,
-//     idleTimeoutMillis: 30000
-//   }
+//     idleTimeoutMillis: 30000,
+//   },
 // };
+
+
+
+const dbConfig = {
+  user: process.env.DB_USER,       
+  password: process.env.DB_PASSWORD,
+  server: process.env.DB_SERVER,   
+  port: parseInt(process.env.DB_PORT),  // <-- use port from .env
+  database: process.env.DB_NAME,
+  options: {
+    encrypt: false,                // false for local dev
+    trustServerCertificate: true
+  },
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000
+  }
+};
 
 
 
@@ -1340,7 +1340,7 @@ app.post("/api/payment/create-order", async (req, res) => {
 
         merchantUrls: {
           // ⭐ Pass MULTIPLE seat IDs
-        //  redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatIds=${seatIdsString}&journeyDate=${selectedDate}&packageId=${packageId}&from=${from}`,
+         // redirectUrl: `http://localhost:5000/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatIds=${seatIdsString}&journeyDate=${selectedDate}&packageId=${packageId}&from=${from}`,
          redirectUrl: `https://api.tirupatipackagetours.com/api/payment/callback?orderId=${merchantOrderId}&amount=${amount}&userId=${userId}&bookingdtlsId=${bookingdtlsId}&busBookingSeatIds=${seatIdsString}&journeyDate=${selectedDate}&packageId=${packageId}&from=${from}`,
         },
       },
@@ -1373,63 +1373,96 @@ app.post("/api/payment/create-order", async (req, res) => {
 });
 
 
+
+
 // app.get("/api/payment/callback", async (req, res) => {
 //   try {
-//     const { orderId, amount, userId, bookingdtlsId, busBookingSeatId, journeyDate,packageId } = req.query;
+//     const {
+//       orderId,
+//       amount,
+//       userId,
+//       bookingdtlsId,
+//       busBookingSeatIds,   // ⭐ Now receiving comma separated seat IDs
+//       journeyDate,
+//       packageId,
+//     } = req.query;
 
 //     console.log("🔄 CALLBACK PARAMS:", req.query);
 
-//     // ✅ 1️⃣ Post to your success endpoint to record payment and update seats
-//      //  await axios.post("https://api.tirupatipackagetours.com/api/success", {
-//   await axios.post("http://localhost:5000/api/success", {
-//       UserID: userId,
-//       BookingdtlsID: bookingdtlsId,
-//       BusBookingSeatID: busBookingSeatId,
-//       Amount: amount / 100,
-//       PaymentMode: "PhonePe",
-//       TransactionID: orderId,
-//       PaymentStatus: "Success",
-//       TransactionCode: "00",
-//       TransactionResponse: "Payment successful via PhonePe",
-//       CreatedBy: userId || 1,
-//       JourneyDate: journeyDate || new Date().toISOString().split("T")[0], // ✅ Pass journey date
-//     });
+//     // ⭐ Convert CSV to array
+//     const seatIdArray = busBookingSeatIds
+//       ? busBookingSeatIds.split(",").map((id) => parseInt(id))
+//       : [];
 
-//     // ✅ 2️⃣ Redirect user to success page
-//      //  res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}`);
-//     res.redirect(`http://localhost:8080/payment-result?orderId=${orderId}`);
+//     console.log("🆔 Parsed Seat ID Array:", seatIdArray);
+
+//     // ⭐ Send the array into /api/success
+//     const successResponse = await axios.post(
+//       "http://localhost:5000/api/success",
+//       {
+//   //  const successResponse = await axios.post("https://api.tirupatipackagetours.com/api/success", {
+//         UserID: userId,
+//         BookingdtlsID: bookingdtlsId,
+
+//         // ⭐ Send array instead of single ID
+//         BusBookingSeatIDs: seatIdArray,
+
+//         Amount: amount / 100,
+//         PaymentMode: "PhonePe",
+//         TransactionID: orderId,
+//         PaymentStatus: "Success",
+//         TransactionCode: "00",
+//         TransactionResponse: "Payment successful via PhonePe",
+//         CreatedBy: userId || 1,
+//         JourneyDate: journeyDate,
+//       }
+//     );
+
+//     let ticketsEncoded = "";
+//     if (successResponse?.data?.tickets) {
+//       ticketsEncoded = encodeURIComponent(JSON.stringify(successResponse.data.tickets));
+//     }
+
+//     // ⭐ Redirect to payment result page
+//     res.redirect(
+//       `http://localhost:8080/payment-result?orderId=${orderId}&tickets=${ticketsEncoded}`
+//     );
+//    // res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}&tickets=${ticketsEncoded}`);
+
+    
+
 //   } catch (err) {
 //     console.error("❌ Payment callback error:", err);
 
 //     try {
 //       const pool = await sql.connect(dbConfig);
 
-//       // ✅ 3️⃣ Mark booking as Cancelled + Failed
-//       const failUpdate = pool.request();
-//       failUpdate.input("BusBookingSeatID", sql.Int, parseInt(req.query.busBookingSeatId || 0));
-//       failUpdate.input("BookingdtlsID", sql.Int, parseInt(req.query.bookingdtlsId || 0));
-//       failUpdate.input("JourneyDate", sql.Date, req.query.journeyDate || new Date().toISOString().split("T")[0]);
+//       // ⭐ Parse multiple seat IDs if present
+//       const seatIdArray =
+//         req.query.busBookingSeatIds?.split(",").map((id) => parseInt(id)) ||
+//         [];
 
-//       await failUpdate.query(`
-//         UPDATE BusBookingSeat
-//         SET Status = 'Cancelled',
-//             PaymentStatus = 'Failed'
-//         WHERE 
-//           (BusBookingSeatID = @BusBookingSeatID OR BusBookingDetailsID = @BookingdtlsID)
-//           AND CAST(JourneyDate AS DATE) = @JourneyDate
-//       `);
+//       console.log("❌ Handling failure for seats:", seatIdArray);
+
+//       // ⭐ Cancel MULTIPLE booked seats
+//       if (seatIdArray.length > 0) {
+//         await pool.request().query(`
+//           UPDATE BusBookingSeat
+//           SET Status = 'Cancelled',
+//               PaymentStatus = 'Failed'
+//           WHERE BusBookingSeatID IN (${seatIdArray.join(",")})
+//         `);
+//       }
+
+     
 
 //       console.log("🚫 Booking marked as failed/cancelled");
 
-//       // ✅ 4️⃣ Clean up SeatLock entries
-//       const cleanup = pool.request();
-//       cleanup.input("BusBookingDetailsID", sql.Int, parseInt(req.query.bookingdtlsId || 0));
-//       cleanup.input("JourneyDate", sql.Date, req.query.journeyDate || new Date().toISOString().split("T")[0]);
-
-//       await cleanup.query(`
+//       // ⭐ Cleanup SeatLock for journey date
+//       await pool.request().query(`
 //         DELETE FROM SeatLock
-//         WHERE BusBookingDetailsID = @BusBookingDetailsID
-//           AND CAST(JourneyDate AS DATE) = @JourneyDate
+//         WHERE BusBookingDetailsID = ${parseInt(req.query.bookingdtlsId || 0)}
+//           AND CAST(JourneyDate AS DATE) = '${req.query.journeyDate || new Date().toISOString().split("T")[0]}'
 //       `);
 
 //       console.log("🧹 Seat locks removed after failed payment");
@@ -1437,18 +1470,11 @@ app.post("/api/payment/create-order", async (req, res) => {
 //       console.error("⚠️ Cleanup/DB update failed:", innerErr);
 //     }
 
-//     // ✅ 5️⃣ Redirect user to frontend failure page
-//   //  res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
-//     res.redirect(`http://localhost:8080/payment-failed`);
+//     // Redirect to failure page
+//      res.redirect(`http://localhost:8080/payment-failed`);
+//     // res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
 //   }
 // });
-
-
-//////////////// phone pe payment ///////
-////////////////////////////////////
-
-// ----------------------------
-
 
 app.get("/api/payment/callback", async (req, res) => {
   try {
@@ -1457,7 +1483,7 @@ app.get("/api/payment/callback", async (req, res) => {
       amount,
       userId,
       bookingdtlsId,
-      busBookingSeatIds,   // ⭐ Now receiving comma separated seat IDs
+      busBookingSeatIds,
       journeyDate,
       packageId,
     } = req.query;
@@ -1471,17 +1497,47 @@ app.get("/api/payment/callback", async (req, res) => {
 
     console.log("🆔 Parsed Seat ID Array:", seatIdArray);
 
-    // ⭐ Send the array into /api/success
+    // -------------------------------------------------------
+    // ⭐⭐⭐ CHECK PHONEPE PAYMENT STATUS (ONLY ADDITION) ⭐⭐⭐
+    // -------------------------------------------------------
+    const token = await getOAuthToken();
+
+    let statusResponse;
+    try {
+      statusResponse = await axios.get(
+        `${SANDBOX_BASE_URL}/v3/transaction/${orderId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+    } catch (err) {
+      console.error("⚠️ Status API Error:", err.response?.data);
+    }
+
+    const paymentState =
+      statusResponse?.data?.data?.state || "FAILED";
+
+    console.log("📌 Payment State from PhonePe:", paymentState);
+
+    // -------------------------------------------------------
+    // ❌ IF PAYMENT FAILED OR CANCELLED → GO TO FAILURE PAGE
+    // -------------------------------------------------------
+    if (paymentState !== "COMPLETED") {
+      console.log("❌ Payment failed/cancelled. Redirecting to failure page...");
+      // return res.redirect(`http://localhost:8080/payment-failed`);
+      return res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
+    }
+
+    // -------------------------------------------------------
+    // ⭐ ORIGINAL SUCCESS LOGIC (UNCHANGED)
+    // -------------------------------------------------------
     // const successResponse = await axios.post(
     //   "http://localhost:5000/api/success",
     //   {
     const successResponse = await axios.post("https://api.tirupatipackagetours.com/api/success", {
         UserID: userId,
         BookingdtlsID: bookingdtlsId,
-
-        // ⭐ Send array instead of single ID
         BusBookingSeatIDs: seatIdArray,
-
         Amount: amount / 100,
         PaymentMode: "PhonePe",
         TransactionID: orderId,
@@ -1495,16 +1551,16 @@ app.get("/api/payment/callback", async (req, res) => {
 
     let ticketsEncoded = "";
     if (successResponse?.data?.tickets) {
-      ticketsEncoded = encodeURIComponent(JSON.stringify(successResponse.data.tickets));
+      ticketsEncoded = encodeURIComponent(
+        JSON.stringify(successResponse.data.tickets)
+      );
     }
 
-    // ⭐ Redirect to payment result page
+    // ⭐ SAME REDIRECT
     // res.redirect(
     //   `http://localhost:8080/payment-result?orderId=${orderId}&tickets=${ticketsEncoded}`
     // );
     res.redirect(`https://www.tirupatipackagetours.com/payment-result?orderId=${orderId}&tickets=${ticketsEncoded}`);
-
-    
 
   } catch (err) {
     console.error("❌ Payment callback error:", err);
@@ -1512,14 +1568,11 @@ app.get("/api/payment/callback", async (req, res) => {
     try {
       const pool = await sql.connect(dbConfig);
 
-      // ⭐ Parse multiple seat IDs if present
       const seatIdArray =
-        req.query.busBookingSeatIds?.split(",").map((id) => parseInt(id)) ||
-        [];
+        req.query.busBookingSeatIds?.split(",").map((id) => parseInt(id)) || [];
 
       console.log("❌ Handling failure for seats:", seatIdArray);
 
-      // ⭐ Cancel MULTIPLE booked seats
       if (seatIdArray.length > 0) {
         await pool.request().query(`
           UPDATE BusBookingSeat
@@ -1529,15 +1582,13 @@ app.get("/api/payment/callback", async (req, res) => {
         `);
       }
 
-     
-
       console.log("🚫 Booking marked as failed/cancelled");
 
-      // ⭐ Cleanup SeatLock for journey date
       await pool.request().query(`
         DELETE FROM SeatLock
         WHERE BusBookingDetailsID = ${parseInt(req.query.bookingdtlsId || 0)}
-          AND CAST(JourneyDate AS DATE) = '${req.query.journeyDate || new Date().toISOString().split("T")[0]}'
+          AND CAST(JourneyDate AS DATE) = '${req.query.journeyDate ||
+            new Date().toISOString().split("T")[0]}'
       `);
 
       console.log("🧹 Seat locks removed after failed payment");
@@ -1545,11 +1596,12 @@ app.get("/api/payment/callback", async (req, res) => {
       console.error("⚠️ Cleanup/DB update failed:", innerErr);
     }
 
-    // Redirect to failure page
-    // res.redirect(`http://localhost:8080/payment-failed`);
-     res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
+   // res.redirect(`http://localhost:8080/payment-failed`);
+    res.redirect(`https://www.tirupatipackagetours.com/payment-failed`);
   }
 });
+
+
 
 app.get("/api/bus/boardingPoints/:busId", async (req, res) => {
   const { busId } = req.params;
